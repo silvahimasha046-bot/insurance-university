@@ -29,6 +29,8 @@
         <textarea
           class="w-full min-h-[200px] rounded-xl border border-gray-300 dark:border-[#324d67] bg-white dark:bg-[#192633] p-4 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-[#92adc9] focus:border-primary focus:ring-1 focus:ring-primary"
           placeholder="Ex: I need life insurance for my family in Gampaha..."
+          [(ngModel)]="needsText"
+          (ngModelChange)="persist()"
         ></textarea>
 
         <button class="absolute bottom-4 right-4 bg-primary text-white p-3 rounded-full shadow-lg hover:bg-primary/90">
@@ -41,7 +43,7 @@
       </p>
 
       <div class="mt-8">
-        <button class="w-full bg-primary text-white font-bold py-4 rounded-xl" routerLink="/wizard/step-2">
+        <button class="w-full bg-primary text-white font-bold py-4 rounded-xl" (click)="next()">
           Analyze My Needs
         </button>
       </div>
