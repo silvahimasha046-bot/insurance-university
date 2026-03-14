@@ -1,0 +1,48 @@
+<div>
+  <h1 class="text-2xl font-bold mb-6">Unmatched Needs Insights</h1>
+
+  <div class="bg-gray-800 p-4 rounded mb-6">
+    <h2 class="text-sm font-medium text-gray-300 mb-2">Add Insight</h2>
+    <div class="flex gap-2 flex-wrap">
+      <input [(ngModel)]="newNeed.theme" placeholder="Theme"
+             class="bg-gray-700 text-white rounded px-3 py-1.5 text-sm flex-1 min-w-32" />
+      <input [(ngModel)]="newNeed.occurrences" type="number" placeholder="Occurrences"
+             class="bg-gray-700 text-white rounded px-3 py-1.5 text-sm w-28" />
+      <input [(ngModel)]="newNeed.sampleAnonymisedText" placeholder="Sample text…"
+             class="bg-gray-700 text-white rounded px-3 py-1.5 text-sm flex-1 min-w-48" />
+      <button (click)="createNeed()"
+              class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-1.5 rounded transition-colors">
+        Add
+      </button>
+    </div>
+  </div>
+
+  <table class="w-full text-sm">
+    <thead class="text-gray-400 border-b border-gray-700">
+      <tr>
+        <th class="text-left py-2">ID</th>
+        <th class="text-left py-2">Theme</th>
+        <th class="text-left py-2">Occurrences</th>
+        <th class="text-left py-2">Sample Text</th>
+        <th class="text-left py-2">Updated</th>
+        <th class="py-2"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let n of needs" class="border-b border-gray-800 hover:bg-gray-800">
+        <td class="py-2">{{ n.id }}</td>
+        <td class="py-2 font-medium">{{ n.theme }}</td>
+        <td class="py-2 text-gray-400">{{ n.occurrences }}</td>
+        <td class="py-2 text-gray-400 max-w-xs truncate">{{ n.sampleAnonymisedText }}</td>
+        <td class="py-2 text-gray-400">{{ n.updatedAt | date:'short' }}</td>
+        <td class="py-2 text-right">
+          <button (click)="deleteNeed(n.id)"
+                  class="text-red-400 hover:text-red-300 text-xs">Delete</button>
+        </td>
+      </tr>
+      <tr *ngIf="needs.length === 0">
+        <td colspan="6" class="py-4 text-center text-gray-500">No insights yet</td>
+      </tr>
+    </tbody>
+  </table>
+</div>

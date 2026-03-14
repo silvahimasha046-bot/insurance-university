@@ -1,6 +1,7 @@
 import { Routes } from "@angular/router";
 import { LandingComponent } from "./features/landing/landing.component";
 import { wizardProgressGuard } from "./core/guards/wizard-progress.guard";
+import { adminGuard } from "./core/guards/admin.guard";
 
 export const routes: Routes = [
   { path: "", component: LandingComponent },
@@ -95,6 +96,56 @@ export const routes: Routes = [
     path: "survey",
     loadComponent: () =>
       import("./features/survey/survey.component").then((m) => m.SurveyComponent),
+  },
+
+  {
+    path: "admin/login",
+    loadComponent: () =>
+      import("./features/admin/login/admin-login.component").then((m) => m.AdminLoginComponent),
+  },
+  {
+    path: "admin",
+    canMatch: [adminGuard],
+    loadComponent: () =>
+      import("./features/admin/layout/admin-layout.component").then((m) => m.AdminLayoutComponent),
+    children: [
+      { path: "", redirectTo: "dashboard", pathMatch: "full" },
+      {
+        path: "dashboard",
+        loadComponent: () =>
+          import("./features/admin/dashboard/admin-dashboard.component").then(
+            (m) => m.AdminDashboardComponent
+          ),
+      },
+      {
+        path: "rules",
+        loadComponent: () =>
+          import("./features/admin/rules/admin-rules.component").then(
+            (m) => m.AdminRulesComponent
+          ),
+      },
+      {
+        path: "training",
+        loadComponent: () =>
+          import("./features/admin/training/admin-training.component").then(
+            (m) => m.AdminTrainingComponent
+          ),
+      },
+      {
+        path: "logs",
+        loadComponent: () =>
+          import("./features/admin/logs/admin-logs.component").then(
+            (m) => m.AdminLogsComponent
+          ),
+      },
+      {
+        path: "insights",
+        loadComponent: () =>
+          import("./features/admin/insights/admin-insights.component").then(
+            (m) => m.AdminInsightsComponent
+          ),
+      },
+    ],
   },
 
   { path: "**", redirectTo: "" },
