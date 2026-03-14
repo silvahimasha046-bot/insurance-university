@@ -51,7 +51,9 @@ public class DevSeedController {
         pricingRepo.save(pricing);
 
         // Seed a model version
-        modelRepo.findAll().forEach(m -> { m.setActive(false); modelRepo.save(m); });
+        List<ModelVersionEntity> existingModels = modelRepo.findAll();
+        existingModels.forEach(m -> m.setActive(false));
+        modelRepo.saveAll(existingModels);
         ModelVersionEntity model = new ModelVersionEntity();
         model.setName("Model v1.0");
         model.setDescription("Initial trained model");

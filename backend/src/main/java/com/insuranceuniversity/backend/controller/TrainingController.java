@@ -67,12 +67,10 @@ public class TrainingController {
     @PostMapping("/models/{id}/promote")
     public ResponseEntity<ModelVersionEntity> promoteModel(@PathVariable Long id) {
         return modelRepo.findById(id).map(model -> {
-            modelRepo.findAll().forEach(m -> {
-                m.setActive(false);
-                modelRepo.save(m);
-            });
-            model.setActive(true);
-            return ResponseEntity.ok(modelRepo.save(model));
+            List<ModelVersionEntity> all = modelRepo.findAll();
+            all.forEach(m -> m.setActive(m.getId().equals(id)));
+            modelRepo.saveAll(all);
+            return ResponseEntity.ok(all.stream().filter(m -> m.getId().equals(id)).findFirst().orElse(model));
         }).orElse(ResponseEntity.notFound().build());
     }
 }
