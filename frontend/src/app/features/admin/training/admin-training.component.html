@@ -1,0 +1,89 @@
+<div>
+  <h1 class="text-2xl font-bold mb-6">Training Data</h1>
+
+  <!-- Dataset Upload -->
+  <section class="mb-8">
+    <h2 class="text-xl font-semibold mb-3">Datasets</h2>
+
+    <div class="bg-gray-800 p-4 rounded mb-4 flex items-center gap-3">
+      <input type="file" (change)="onFileSelected($event)"
+             class="text-sm text-gray-300 file:mr-3 file:py-1.5 file:px-3 file:rounded file:bg-gray-600 file:text-white file:border-0 file:text-sm cursor-pointer" />
+      <button (click)="uploadDataset()" [disabled]="!selectedFile || uploading"
+              class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm px-4 py-1.5 rounded transition-colors">
+        {{ uploading ? 'Uploading…' : 'Upload' }}
+      </button>
+    </div>
+
+    <table class="w-full text-sm">
+      <thead class="text-gray-400 border-b border-gray-700">
+        <tr>
+          <th class="text-left py-2">ID</th>
+          <th class="text-left py-2">Filename</th>
+          <th class="text-left py-2">Size</th>
+          <th class="text-left py-2">Uploaded</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let d of datasets" class="border-b border-gray-800 hover:bg-gray-800">
+          <td class="py-2">{{ d.id }}</td>
+          <td class="py-2">{{ d.originalFilename }}</td>
+          <td class="py-2 text-gray-400">{{ d.fileSize | number }} bytes</td>
+          <td class="py-2 text-gray-400">{{ d.uploadedAt | date:'short' }}</td>
+        </tr>
+        <tr *ngIf="datasets.length === 0">
+          <td colspan="4" class="py-4 text-center text-gray-500">No datasets yet</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Model Versions -->
+  <section>
+    <h2 class="text-xl font-semibold mb-3">Model Versions</h2>
+
+    <div class="bg-gray-800 p-4 rounded mb-4">
+      <h3 class="text-sm font-medium text-gray-300 mb-2">Add Model Version</h3>
+      <div class="flex gap-2 flex-wrap">
+        <input [(ngModel)]="newModel.name" placeholder="Name"
+               class="bg-gray-700 text-white rounded px-3 py-1.5 text-sm flex-1 min-w-32" />
+        <input [(ngModel)]="newModel.description" placeholder="Description"
+               class="bg-gray-700 text-white rounded px-3 py-1.5 text-sm flex-1 min-w-48" />
+        <button (click)="createModel()"
+                class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-1.5 rounded transition-colors">
+          Create
+        </button>
+      </div>
+    </div>
+
+    <table class="w-full text-sm">
+      <thead class="text-gray-400 border-b border-gray-700">
+        <tr>
+          <th class="text-left py-2">ID</th>
+          <th class="text-left py-2">Name</th>
+          <th class="text-left py-2">Description</th>
+          <th class="text-left py-2">Status</th>
+          <th class="py-2"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let m of models" class="border-b border-gray-800 hover:bg-gray-800">
+          <td class="py-2">{{ m.id }}</td>
+          <td class="py-2">{{ m.name }}</td>
+          <td class="py-2 text-gray-400">{{ m.description }}</td>
+          <td class="py-2">
+            <span [class]="m.active ? 'text-green-400 font-semibold' : 'text-gray-500'">
+              {{ m.active ? 'Active' : 'Inactive' }}
+            </span>
+          </td>
+          <td class="py-2 text-right">
+            <button *ngIf="!m.active" (click)="promoteModel(m.id)"
+                    class="text-blue-400 hover:text-blue-300 text-xs">Promote</button>
+          </td>
+        </tr>
+        <tr *ngIf="models.length === 0">
+          <td colspan="5" class="py-4 text-center text-gray-500">No models yet</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+</div>
