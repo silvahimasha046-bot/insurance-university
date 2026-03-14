@@ -20,12 +20,42 @@
         </p>
       </div>
 
+      <div class="space-y-4">
+        <label class="block">
+          <p class="text-slate-700 dark:text-slate-300 font-medium mb-2">Overall Health</p>
+          <select
+            class="w-full h-12 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 text-slate-900 dark:text-white"
+            [(ngModel)]="health"
+            (ngModelChange)="persist()">
+            <option value="excellent">Excellent</option>
+            <option value="good">Good</option>
+            <option value="average">Average</option>
+            <option value="poor">Poor</option>
+          </select>
+        </label>
+
+        <label class="flex items-center gap-3 cursor-pointer">
+          <input type="checkbox" class="w-5 h-5 rounded accent-primary" [(ngModel)]="tobaccoUse" (ngModelChange)="persist()" />
+          <span class="text-slate-700 dark:text-slate-300 font-medium">Tobacco / Nicotine use</span>
+        </label>
+
+        <label class="block">
+          <p class="text-slate-700 dark:text-slate-300 font-medium mb-2">Pre-existing Conditions <span class="font-normal text-slate-400">(comma-separated)</span></p>
+          <input
+            type="text"
+            class="w-full h-12 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 text-slate-900 dark:text-white placeholder:text-slate-400"
+            placeholder="e.g. diabetes, hypertension"
+            [(ngModel)]="conditionsText"
+            (ngModelChange)="persist()" />
+        </label>
+      </div>
+
       <div class="flex items-center justify-between">
         <button class="px-8 py-3.5 rounded-xl border border-slate-300 dark:border-slate-700 font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800" routerLink="/wizard/step-2">
           Back
         </button>
 
-        <button class="px-8 py-3.5 rounded-xl bg-primary text-white font-bold" routerLink="/recommendations">
+        <button class="px-8 py-3.5 rounded-xl bg-primary text-white font-bold" (click)="seeRecommendations()">
           See Recommendations
           <span class="material-symbols-outlined ml-2 text-xl">arrow_forward</span>
         </button>
