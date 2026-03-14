@@ -1,0 +1,50 @@
+<div class="bg-background-light dark:bg-background-dark min-h-screen flex justify-center">
+  <div class="w-full max-w-[430px] min-h-screen border-x border-gray-200 dark:border-gray-800">
+    <header class="flex items-center p-4 justify-between sticky top-0 bg-background-light dark:bg-background-dark z-10">
+      <div class="flex size-12 items-center cursor-pointer" routerLink="/">
+        <span class="material-symbols-outlined text-gray-900 dark:text-white">arrow_back</span>
+      </div>
+      <h2 class="text-gray-900 dark:text-white text-lg font-bold flex-1 text-center pr-12">Intake Wizard</h2>
+    </header>
+
+    <div class="flex flex-col items-center py-4">
+      <div class="flex gap-3">
+        <div class="h-2 w-8 rounded-full bg-primary"></div>
+        <div class="h-2 w-2 rounded-full bg-gray-300 dark:bg-[#324d67]"></div>
+        <div class="h-2 w-2 rounded-full bg-gray-300 dark:bg-[#324d67]"></div>
+      </div>
+      <p class="text-gray-500 dark:text-[#92adc9] text-xs font-semibold mt-2 uppercase tracking-wider">Step 1 of 3</p>
+    </div>
+
+    <main class="px-4 pb-10">
+      <h1 class="text-gray-900 dark:text-white text-[32px] font-bold text-center pb-4 pt-4">
+        Ayubowan! How can we protect your future today?
+      </h1>
+
+      <p class="text-gray-600 dark:text-[#92adc9] text-center mb-4">
+        Tell us your insurance needs (text or voice).
+      </p>
+
+      <div class="relative">
+        <textarea
+          class="w-full min-h-[200px] rounded-xl border border-gray-300 dark:border-[#324d67] bg-white dark:bg-[#192633] p-4 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-[#92adc9] focus:border-primary focus:ring-1 focus:ring-primary"
+          placeholder="Ex: I need life insurance for my family in Gampaha..."
+        ></textarea>
+
+        <button class="absolute bottom-4 right-4 bg-primary text-white p-3 rounded-full shadow-lg hover:bg-primary/90">
+          <span class="material-symbols-outlined">mic</span>
+        </button>
+      </div>
+
+      <p class="text-gray-500 dark:text-[#92adc9] text-sm font-normal leading-normal text-center mt-4">
+        Supports <span class="font-semibold text-primary">Sinhala</span> and <span class="font-semibold text-primary">English</span> voice input
+      </p>
+
+      <div class="mt-8">
+        <button class="w-full bg-primary text-white font-bold py-4 rounded-xl" routerLink="/wizard/step-2">
+          Analyze My Needs
+        </button>
+      </div>
+    </main>
+  </div>
+</div>

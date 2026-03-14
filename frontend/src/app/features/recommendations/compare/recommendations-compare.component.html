@@ -1,0 +1,39 @@
+<div class="bg-background-light dark:bg-background-dark font-display min-h-screen text-slate-900 dark:text-white">
+  <div class="sticky top-0 z-50 flex items-center p-4 justify-between border-b border-gray-200 dark:border-gray-800">
+    <div class="flex size-12 items-center cursor-pointer" routerLink="/recommendations">
+      <span class="material-symbols-outlined">arrow_back</span>
+    </div>
+    <h2 class="text-lg font-bold flex-1 text-center">Policy Comparison</h2>
+    <div class="flex w-12 justify-end">
+      <span class="material-symbols-outlined">share</span>
+    </div>
+  </div>
+
+  <div class="p-4 max-w-xl mx-auto">
+    <h3 class="text-2xl font-bold">Compare Plans</h3>
+    <p class="text-slate-500 dark:text-[#92adc9] text-sm mt-1">AI-powered analysis of best matches</p>
+
+    <div class="mt-6 space-y-4">
+      <div class="rounded-xl p-4 bg-white dark:bg-[#1a2632] border border-gray-100 dark:border-gray-800">
+        <h4 class="text-primary text-xs font-bold uppercase tracking-wider mb-3">Key Metrics</h4>
+        <div class="flex justify-between py-2 border-b border-gray-50 dark:border-gray-800">
+          <span class="text-slate-500 dark:text-[#92adc9]">Monthly Premium</span>
+          <span class="font-bold">Rs. 4,250</span>
+        </div>
+        <div class="flex justify-between py-2 border-b border-gray-50 dark:border-gray-800">
+          <span class="text-slate-500 dark:text-[#92adc9]">Suitability</span>
+          <span class="font-bold text-green-500">95%</span>
+        </div>
+      </div>
+
+      <button class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-xl" routerLink="/proposal/upload">
+        Select Smart Life Plan
+        <span class="material-symbols-outlined align-middle ml-2">arrow_forward</span>
+      </button>
+
+      <button class="w-full border border-gray-200 dark:border-gray-800 font-bold py-4 rounded-xl" routerLink="/simulator">
+        Run What-if Simulation
+      </button>
+    </div>
+  </div>
+</div>

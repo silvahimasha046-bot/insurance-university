@@ -1,0 +1,41 @@
+<div class="bg-background-light dark:bg-background-dark font-display min-h-screen flex items-center justify-center p-4">
+  <div class="fixed inset-0 bg-black/70 backdrop-blur-sm z-0"></div>
+
+  <div class="relative z-10 w-full max-w-md bg-background-dark border border-[#324d67] rounded-xl overflow-hidden shadow-2xl text-white">
+    <div class="pt-4">
+      <h4 class="text-[#92adc9] text-sm font-bold tracking-[0.015em] px-4 py-2 text-center uppercase">
+        How was your advice session?
+      </h4>
+    </div>
+
+    <div class="px-6 py-4 flex flex-col items-center">
+      <div class="flex gap-2 mb-2">
+        <span class="material-symbols-outlined text-primary text-4xl cursor-pointer">star</span>
+        <span class="material-symbols-outlined text-primary text-4xl cursor-pointer">star</span>
+        <span class="material-symbols-outlined text-primary text-4xl cursor-pointer">star</span>
+        <span class="material-symbols-outlined text-primary text-4xl cursor-pointer">star</span>
+        <span class="material-symbols-outlined text-[#324d67] text-4xl cursor-pointer">star</span>
+      </div>
+      <p class="text-[#92adc9] text-sm">Tap a star to rate</p>
+    </div>
+
+    <div class="border-t border-[#324d67] mx-6"></div>
+
+    <div class="px-6 pb-4">
+      <label class="block text-white text-sm font-bold mb-2 ml-1">Any additional feedback?</label>
+      <textarea
+        class="w-full bg-[#1c2a38] border border-[#324d67] rounded-lg p-3 text-white placeholder-[#92adc9] focus:outline-none focus:border-primary min-h-[100px] resize-none"
+        placeholder="Tell us what we can improve..."
+      ></textarea>
+    </div>
+
+    <div class="px-6 pb-8 flex flex-col gap-3">
+      <button class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3.5 rounded-lg" routerLink="/">
+        Submit Feedback
+      </button>
+      <button class="w-full text-[#92adc9] hover:text-white text-sm font-medium py-2" routerLink="/">
+        Skip Survey
+      </button>
+    </div>
+  </div>
+</div>

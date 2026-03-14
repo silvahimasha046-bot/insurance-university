@@ -1,0 +1,30 @@
+<div class="bg-background-light dark:bg-background-dark font-display min-h-screen text-white">
+  <div class="sticky top-0 z-10 flex items-center p-4 justify-between border-b border-gray-200 dark:border-gray-800 bg-background-light dark:bg-background-dark">
+    <div class="flex size-12 items-center cursor-pointer" routerLink="/recommendations">
+      <span class="material-symbols-outlined text-primary dark:text-white">arrow_back</span>
+    </div>
+    <h2 class="text-gray-900 dark:text-white text-lg font-bold flex-1 text-center pr-12">Premium Simulator</h2>
+  </div>
+
+  <div class="p-4 max-w-xl mx-auto text-gray-900 dark:text-white">
+    <h2 class="text-[28px] font-extrabold">What-If Simulator</h2>
+    <p class="text-gray-500 dark:text-[#92adc9] text-sm mt-1">
+      Adjust parameters to see premium changes.
+    </p>
+
+    <div class="mt-6 rounded-2xl p-8 bg-primary text-white text-center shadow-xl shadow-primary/20">
+      <p class="text-white/80 text-sm font-medium uppercase tracking-widest mb-2">Estimated Monthly Premium</p>
+      <h3 class="text-5xl font-extrabold">Rs. 12,400</h3>
+      <p class="text-white/90 text-xl font-medium mt-1">per month</p>
+    </div>
+
+    <div class="mt-6 flex flex-col gap-3">
+      <button class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-xl" routerLink="/proposal/upload">
+        Apply with this Quote
+      </button>
+      <button class="w-full border border-gray-200 dark:border-gray-800 font-bold py-4 rounded-xl" routerLink="/recommendations">
+        Save for Later
+      </button>
+    </div>
+  </div>
+</div>
