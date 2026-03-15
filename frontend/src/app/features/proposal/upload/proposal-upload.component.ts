@@ -3,8 +3,8 @@ import { RouterModule } from '@angular/router';
 
 @Component({
   standalone: true,
-  selector: 'app-login',
+  selector: 'app-proposal-upload',
   imports: [RouterModule],
-  templateUrl: './login.component.html',
+  templateUrl: './proposal-upload.component.html',
 })
-export class LoginComponent {}
+export class ProposalUploadComponent {}
