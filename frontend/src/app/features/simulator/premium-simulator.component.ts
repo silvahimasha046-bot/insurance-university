@@ -3,8 +3,8 @@ import { RouterModule } from '@angular/router';
 
 @Component({
   standalone: true,
-  selector: 'app-login',
+  selector: 'app-premium-simulator',
   imports: [RouterModule],
-  templateUrl: './login.component.html',
+  templateUrl: './premium-simulator.component.html',
 })
-export class LoginComponent {}
+export class PremiumSimulatorComponent {}

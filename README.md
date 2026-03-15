@@ -31,14 +31,18 @@ docker compose ps
 
 ## Running the Backend (Spring Boot)
 
+Requires Java 17+ and Maven 3.8+.
+
 ```bash
 cd backend
 mvn spring-boot:run
 ```
 
-By default the backend connects to:
-- MySQL at `localhost:3306`
-- AI Engine at `http://localhost:8000` (env var `AI_ENGINE_URL`)
+The backend starts on **port 8080** and connects to:
+- MySQL at `localhost:3306` (database `insurance_university`)
+- AI Engine at `http://localhost:8000` (configurable via `AI_ENGINE_URL`)
+
+Default admin credentials: `admin@local` / `Admin@123`
 
 To point the backend at the docker-networked AI engine instead:
 
@@ -46,11 +50,11 @@ To point the backend at the docker-networked AI engine instead:
 AI_ENGINE_URL=http://ai-engine:8000 mvn spring-boot:run
 ```
 
-Or if both MySQL and AI engine run via docker compose (and the backend joins the same network), set `AI_ENGINE_URL=http://ai-engine:8000` in your shell / `.env` file.
-
 ---
 
-## Running the AI Engine Locally (without Docker)
+## Running the AI Engine (FastAPI)
+
+Requires Python 3.11+.
 
 ```bash
 cd ai-engine
@@ -58,17 +62,62 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
+The AI engine starts on **port 8000**.  
+Health check: `curl http://localhost:8000/health`
+
 ---
 
 ## Running the Frontend (Angular)
 
+Requires Node.js 18+ and npm.
+
 ```bash
 cd frontend
 npm install
-npm start
+npm start       # equivalent to: ng serve
 ```
 
-Open `http://localhost:4200` in your browser.
+Open **http://localhost:4200** in your browser.
+
+### Frontend environment configuration
+
+API base URLs are defined in `src/environments/`:
+
+| File | Used when |
+|---|---|
+| `environment.development.ts` | `ng serve` (default) |
+| `environment.ts` | production build (`ng build --configuration production`) |
+
+Both files default to `http://localhost:8080/api` for Spring Boot and `http://localhost:8000` for the AI engine.
+
+### Customer journey routes
+
+| URL | Description |
+|---|---|
+| `/` | Landing page |
+| `/login` | Customer login |
+| `/register` | Customer registration |
+| `/wizard/step-1` | Intake wizard — needs text |
+| `/wizard/step-2` | Intake wizard — financial profile |
+| `/wizard/step-3` | Intake wizard — health & lifestyle |
+| `/recommendations` | AI-ranked product recommendations |
+| `/recommendations/compare` | Plan comparison |
+| `/proposal/upload` | Document upload |
+| `/proposal/missing` | Missing information form |
+| `/proposal/summary` | Proposal preview & PDF download |
+| `/simulator` | Premium what-if simulator |
+| `/survey` | Post-session feedback survey |
+
+### Admin journey routes
+
+| URL | Description |
+|---|---|
+| `/admin/login` | Admin login (credentials: `admin@local` / `Admin@123`) |
+| `/admin/dashboard` | Overview with navigation links |
+| `/admin/rules` | Eligibility rules & pricing tables |
+| `/admin/training` | Dataset upload & model version management |
+| `/admin/logs` | Session log search, filter & export |
+| `/admin/insights` | Unmatched needs insights |
 
 ---
 
@@ -132,13 +181,13 @@ curl http://localhost:8080/api/customer/sessions/$SESSION_ID
 Admin endpoints are protected by JWT. Log in first:
 
 ```bash
-curl -X POST http://localhost:8080/api/auth/login \
+curl -X POST http://localhost:8080/api/auth/admin/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@local","password":"Admin@123"}'
-# → { "token": "..." }
+# → { "accessToken": "..." }
 ```
 
-Then pass the token as `Authorization: Bearer <token>` for `/api/admin/**` requests.
+Then pass the token as `Authorization: Bearer <token>` for all `/api/admin/**` requests.
 
 ---
 

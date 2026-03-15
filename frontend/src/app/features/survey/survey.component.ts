@@ -3,8 +3,8 @@ import { RouterModule } from '@angular/router';
 
 @Component({
   standalone: true,
-  selector: 'app-login',
+  selector: 'app-survey',
   imports: [RouterModule],
-  templateUrl: './login.component.html',
+  templateUrl: './survey.component.html',
 })
-export class LoginComponent {}
+export class SurveyComponent {}
