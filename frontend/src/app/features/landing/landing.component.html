@@ -1,0 +1,158 @@
+<div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+  <nav
+    class="sticky top-0 z-50 flex items-center bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md p-4 pb-4 justify-between border-b border-gray-200 dark:border-gray-800"
+  >
+    <div class="flex items-center gap-2">
+      <div class="text-primary flex size-8 shrink-0 items-center justify-center bg-primary/10 rounded-lg">
+        <span class="material-symbols-outlined">shield_with_heart</span>
+      </div>
+      <h2 class="text-gray-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">InsureAI</h2>
+    </div>
+
+    <div class="flex items-center gap-4">
+      <div data-lang-dropdown class="relative @[480px]:block">
+        <div class="flex items-center gap-1 cursor-pointer" (click)="toggleLang()">
+          <span class="material-symbols-outlined text-slate-500 dark:text-slate-400 text-sm">language</span>
+          <span class="text-xs font-bold uppercase text-slate-600 dark:text-slate-300">
+            {{ selectedLangLabel }}
+          </span>
+          <span class="material-symbols-outlined text-slate-400 text-sm">expand_more</span>
+        </div>
+
+        <div
+          class="absolute right-0 mt-2 w-32 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-50"
+          [class.hidden]="!langMenuOpen"
+        >
+          <button
+            (click)="setLanguage('en','EN')"
+            class="w-full text-left px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
+          >
+            English
+          </button>
+
+          <button
+            (click)="setLanguage('si','සිං')"
+            class="w-full text-left px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
+          >
+            සිංහල
+          </button>
+        </div>
+      </div>
+
+      <button class="text-gray-600 dark:text-gray-400 text-sm font-bold leading-normal" routerLink="/login">
+        Login
+      </button>
+      <button class="bg-primary text-white text-xs px-3 py-1.5 rounded-lg font-bold" routerLink="/register">
+        Register Account
+      </button>
+    </div>
+  </nav>
+
+  <div class="@container">
+    <div class="@[480px]:p-4">
+      <div
+        class="flex min-h-[520px] flex-col gap-6 bg-cover bg-center bg-no-repeat @[480px]:gap-8 @[480px]:rounded-xl items-center justify-center p-6"
+        style='background-image: linear-gradient(rgba(16, 25, 34, 0.85) 0%, rgba(16, 25, 34, 0.95) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuD1ujulgvJg49aieGK5f5lsUdctEniE1QWLj_jvNLpn9kK6IqjoPkYFiliU87rUIMMMXlACBRLvpvR70hsH6Fs0zu22L4hheod2J7lrMrs_39gjvflT5W1vvEzQDqSApVwUiRgJsjDt1jRCtvPhKdDFzI125GXdWkaoPF-gTDyPwrq1Altn41Htn7yw6ae6TPXtuctjbi0AGB77wVltmAz4cGWhUOE0JRfzNRIedSZN4gZEBZhDv5ZYOyxeu8yeyNiFeAHfyBins-A");'
+      >
+        <div class="flex flex-col gap-4 text-center">
+          <h1 class="text-white text-3xl font-extrabold leading-tight tracking-[-0.033em] @[480px]:text-5xl">
+            Instant, AI-Powered Insurance Advice tailored to your life
+          </h1>
+          <h2 class="text-gray-300 text-sm font-normal leading-relaxed @[480px]:text-lg max-w-md mx-auto">
+            Get unbiased policy recommendations in minutes using our secure, intelligent AI advisor.
+          </h2>
+        </div>
+
+        <div class="flex flex-col w-full gap-3 @[480px]:flex-row justify-center">
+          <button
+            class="flex min-w-[200px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-6 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-colors"
+            routerLink="/wizard/step-1"
+          >
+            <span class="truncate">Start Free Advice Session</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-8">
+    <h4 class="text-primary text-xs uppercase font-extrabold leading-normal tracking-[0.1em] px-4 py-2 text-center">
+      Why Trust Our AI?
+    </h4>
+  </div>
+
+  <div class="flex flex-col gap-8 px-4 py-8 @container">
+    <div class="flex flex-col gap-3 text-center @[480px]:text-left">
+      <h1 class="text-gray-900 dark:text-white tracking-tight text-2xl font-bold leading-tight @[480px]:text-3xl">
+        Secure &amp; Private by Design
+      </h1>
+      <p class="text-gray-600 dark:text-gray-400 text-sm font-normal leading-normal max-w-[720px]">
+        We prioritize your data sovereignty. Your personal information is encrypted and processed securely.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 @[480px]:grid-cols-3 gap-4">
+      <div class="flex flex-col gap-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-background-dark p-5 shadow-sm">
+        <div class="text-primary">
+          <span class="material-symbols-outlined text-3xl">lock</span>
+        </div>
+        <div class="flex flex-col gap-1">
+          <h2 class="text-gray-900 dark:text-white text-base font-bold leading-tight">Privacy First</h2>
+          <p class="text-gray-600 dark:text-gray-400 text-sm font-normal leading-normal">
+            Bank-grade encryption for all data storage
+          </p>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-background-dark p-5 shadow-sm">
+        <div class="text-primary">
+          <span class="material-symbols-outlined text-3xl">balance</span>
+        </div>
+        <div class="flex flex-col gap-1">
+          <h2 class="text-gray-900 dark:text-white text-base font-bold leading-tight">Unbiased Results</h2>
+          <p class="text-gray-600 dark:text-gray-400 text-sm font-normal leading-normal">
+            Zero commission conflict, just pure analytics
+          </p>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-background-dark p-5 shadow-sm">
+        <div class="text-primary">
+          <span class="material-symbols-outlined text-3xl">bolt</span>
+        </div>
+        <div class="flex flex-col gap-1">
+          <h2 class="text-gray-900 dark:text-white text-base font-bold leading-tight">Instant Clarity</h2>
+          <p class="text-gray-600 dark:text-gray-400 text-sm font-normal leading-normal">
+            Analyze hundreds of policies in seconds
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="@container bg-primary/5 dark:bg-primary/10 my-8">
+    <div class="flex flex-col justify-center gap-6 px-6 py-12 @[480px]:gap-8 @[480px]:px-10 @[480px]:py-20 text-center">
+      <div class="flex flex-col gap-3 max-w-2xl mx-auto">
+        <h1 class="text-gray-900 dark:text-white tracking-tight text-3xl font-bold leading-tight @[480px]:text-4xl">
+          Ready to find the perfect policy?
+        </h1>
+        <p class="text-gray-600 dark:text-gray-400 text-base font-normal leading-normal">
+          Get started in minutes.
+        </p>
+      </div>
+
+      <div class="flex flex-col @[480px]:flex-row justify-center gap-4">
+        <button
+          class="flex min-w-[240px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-8 bg-primary text-white text-base font-bold leading-normal tracking-[0.015em] hover:scale-[1.02] transition-transform shadow-lg shadow-primary/25"
+          routerLink="/wizard/step-1"
+        >
+          <span class="truncate">Get Started Now</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="mt-auto p-6 border-t border-gray-200 dark:border-gray-800 text-center">
+    <p class="text-gray-500 text-xs">© 2024 InsureAI. All rights reserved.</p>
+  </footer>
+</div>

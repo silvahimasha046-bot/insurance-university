@@ -1,0 +1,63 @@
+<div class="bg-background-light dark:bg-background-dark font-display min-h-screen flex items-center justify-center p-4">
+  <div class="w-full max-w-[480px] rounded-xl shadow-2xl border border-gray-200 dark:border-[#324d67] bg-white dark:bg-[#101922] overflow-hidden">
+    <div class="flex items-center p-4 justify-between">
+      <div class="flex size-12 items-center justify-center text-gray-900 dark:text-white cursor-pointer" routerLink="/">
+        <span class="material-symbols-outlined">close</span>
+      </div>
+      <h2 class="text-gray-900 dark:text-white text-lg font-bold flex-1 text-center pr-12">Log In</h2>
+    </div>
+
+    <div class="px-4 pt-5 pb-1">
+      <h2 class="text-gray-900 dark:text-white text-[28px] font-bold leading-tight">Welcome back</h2>
+    </div>
+
+    <div class="px-4 pt-1 pb-3" *ngIf="errorVisible">
+      <p class="text-red-500 text-sm font-medium leading-normal flex items-center gap-2">
+        <span class="material-symbols-outlined text-[18px]">error</span>
+        Invalid credentials. Please try again.
+      </p>
+    </div>
+
+    <div class="px-4 py-3">
+      <label class="flex flex-col">
+        <p class="text-gray-900 dark:text-white text-sm font-medium pb-2">Email</p>
+        <div class="flex">
+          <input [(ngModel)]="email" class="flex-1 h-14 rounded-l-lg border border-gray-300 dark:border-[#324d67] bg-white dark:bg-[#192633] px-4 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-[#92adc9] focus:border-primary focus:ring-0" placeholder="Enter your email" type="email" />
+          <div class="h-14 px-4 flex items-center rounded-r-lg border border-l-0 border-gray-300 dark:border-[#324d67] bg-white dark:bg-[#192633] text-gray-400 dark:text-[#92adc9]">
+            <span class="material-symbols-outlined">mail</span>
+          </div>
+        </div>
+      </label>
+    </div>
+
+    <div class="px-4 py-3">
+      <label class="flex flex-col">
+        <p class="text-gray-900 dark:text-white text-sm font-medium pb-2">Password</p>
+        <div class="flex">
+          <input [(ngModel)]="password" class="flex-1 h-14 rounded-l-lg border border-gray-300 dark:border-[#324d67] bg-white dark:bg-[#192633] px-4 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-[#92adc9] focus:border-primary focus:ring-0" placeholder="Enter your password" type="password" />
+          <div class="h-14 px-4 flex items-center rounded-r-lg border border-l-0 border-gray-300 dark:border-[#324d67] bg-white dark:bg-[#192633] text-gray-400 dark:text-[#92adc9]">
+            <span class="material-symbols-outlined">lock</span>
+          </div>
+        </div>
+      </label>
+    </div>
+
+    <div class="px-4 flex justify-end">
+      <a class="text-primary text-sm font-bold hover:underline" href="#">Forgot Password?</a>
+    </div>
+
+    <div class="px-4 py-6">
+      <button (click)="login()" class="w-full bg-primary text-white font-bold py-4 rounded-lg text-base hover:bg-primary/90 transition-colors">
+        Log In
+      </button>
+    </div>
+
+    <div class="px-4 pb-8 text-center text-sm text-gray-500 dark:text-[#92adc9]">
+      Don't have an account?
+      <a class="text-primary font-bold" routerLink="/register">Sign up</a>
+      <div class="mt-2">
+        <a class="text-primary font-bold" routerLink="/">Back to landing</a>
+      </div>
+    </div>
+  </div>
+</div>

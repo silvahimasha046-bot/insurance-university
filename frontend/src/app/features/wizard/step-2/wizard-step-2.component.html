@@ -1,0 +1,60 @@
+<div class="bg-background-light dark:bg-background-dark font-display min-h-screen flex justify-center">
+  <div class="w-full max-w-[430px] min-h-screen border-x border-primary/10 pb-24">
+    <div class="flex items-center p-4 justify-between sticky top-0 z-10 bg-background-light dark:bg-background-dark border-b border-gray-200 dark:border-gray-800">
+      <div class="flex size-12 items-center cursor-pointer" routerLink="/wizard/step-1">
+        <span class="material-symbols-outlined text-primary dark:text-white">arrow_back</span>
+      </div>
+      <h2 class="text-gray-900 dark:text-white text-lg font-bold flex-1 text-center pr-12">Intake Wizard</h2>
+    </div>
+
+    <div class="flex flex-col items-center py-5 gap-2">
+      <div class="flex w-full justify-center gap-3 px-4">
+        <div class="h-1.5 w-1/4 rounded-full bg-primary"></div>
+        <div class="h-1.5 w-1/4 rounded-full bg-primary"></div>
+        <div class="h-1.5 w-1/4 rounded-full bg-primary/20 dark:bg-primary/10"></div>
+      </div>
+      <p class="text-xs font-semibold text-primary/80 uppercase tracking-wider">Step 2 of 3</p>
+    </div>
+
+    <div class="px-4">
+      <h3 class="text-gray-900 dark:text-white text-2xl font-bold">Coverage Analysis</h3>
+      <p class="text-slate-500 dark:text-[#92adc9] text-sm mt-1">
+        Help us understand your financial situation.
+      </p>
+    </div>
+
+    <div class="px-4 py-4 space-y-4">
+      <label class="block">
+        <p class="text-gray-900 dark:text-white font-medium pb-2">Monthly Household Income</p>
+        <div class="relative">
+          <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#92adc9] font-medium">LKR</span>
+          <input
+            class="w-full h-14 rounded-lg border border-slate-200 dark:border-[#324d67] bg-white dark:bg-[#192633] pl-14 pr-4 text-gray-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-[#92adc9] focus:border-primary focus:ring-1 focus:ring-primary"
+            type="number"
+            [(ngModel)]="monthlyIncomeLkr"
+            (ngModelChange)="persist()"
+          />
+        </div>
+      </label>
+
+      <label class="block">
+        <p class="text-gray-900 dark:text-white font-medium pb-2">Existing loans</p>
+        <textarea
+          class="w-full min-h-[100px] rounded-lg border border-slate-200 dark:border-[#324d67] bg-white dark:bg-[#192633] p-4 text-gray-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-[#92adc9] focus:border-primary focus:ring-1 focus:ring-primary resize-none"
+          placeholder="Housing Loan / Vehicle Lease details..."
+          [(ngModel)]="loansText"
+          (ngModelChange)="persist()"
+        ></textarea>
+      </label>
+    </div>
+
+    <div class="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-white/80 dark:bg-background-dark/80 backdrop-blur-md p-4 flex gap-3 border-t border-gray-200 dark:border-gray-800">
+      <button class="flex-1 h-14 rounded-xl font-bold border border-slate-200 dark:border-[#324d67] text-gray-900 dark:text-white" routerLink="/wizard/step-1">
+        Back
+      </button>
+      <button class="flex-[2] h-14 rounded-xl font-bold bg-primary text-white" (click)="next()">
+        Continue
+      </button>
+    </div>
+  </div>
+</div>

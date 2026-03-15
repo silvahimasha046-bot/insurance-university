@@ -1,0 +1,62 @@
+<div class="bg-background-dark min-h-screen text-white font-display max-w-md mx-auto border-x border-gray-800">
+  <div class="sticky top-0 z-10 flex items-center p-4 justify-between bg-[#111a22]">
+    <div class="flex size-12 items-center cursor-pointer" routerLink="/proposal/upload">
+      <span class="material-symbols-outlined">arrow_back</span>
+    </div>
+    <h2 class="text-lg font-bold flex-1">Proposal Details</h2>
+    <div class="flex size-12 items-center justify-end">
+      <span class="material-symbols-outlined">more_vert</span>
+    </div>
+  </div>
+
+  <div class="p-4 pb-28">
+    <h3 class="text-lg font-bold">Missing Information</h3>
+    <p class="text-[#92adc9] text-sm mt-1">Complete details to generate the final proposal.</p>
+
+    <div class="mt-6 space-y-4">
+      <label class="block">
+        <p class="font-medium pb-2">Address Line 1</p>
+        <input class="w-full h-14 rounded-lg border border-[#324d67] bg-[#192633] px-4 text-white placeholder:text-[#92adc9] focus:border-primary focus:ring-0" placeholder="No. 123, Galle Road" />
+      </label>
+
+      <label class="block">
+        <p class="font-medium pb-2">City</p>
+        <input class="w-full h-14 rounded-lg border border-[#324d67] bg-[#192633] px-4 text-white placeholder:text-[#92adc9] focus:border-primary focus:ring-0" placeholder="Colombo 03" />
+      </label>
+
+      <label class="block">
+        <p class="font-medium pb-2">District</p>
+        <select class="w-full h-14 rounded-lg border border-[#324d67] bg-[#192633] px-4 text-white focus:border-primary focus:ring-0">
+          <option value="">Select District</option>
+          <option>Colombo</option>
+          <option>Kandy</option>
+          <option>Galle</option>
+          <option>Gampaha</option>
+          <option>Kalutara</option>
+        </select>
+      </label>
+
+      <label class="block">
+        <p class="font-medium pb-2">NIC Number</p>
+        <input class="w-full h-14 rounded-lg border border-[#324d67] bg-[#192633] px-4 text-white placeholder:text-[#92adc9] focus:border-primary focus:ring-0" placeholder="901234567V or 199012345678" />
+      </label>
+    </div>
+
+    <div class="mt-8 rounded-xl p-5 bg-primary/10 border border-primary/30">
+      <div class="flex justify-between items-start">
+        <div>
+          <p class="text-primary text-xs font-bold uppercase tracking-wider">Plan Selected</p>
+          <h4 class="text-white text-xl font-bold">Comprehensive Life+</h4>
+        </div>
+        <span class="material-symbols-outlined text-primary">verified</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md p-4 bg-background-dark/80 backdrop-blur border-t border-gray-800">
+    <button class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-xl" routerLink="/proposal/summary">
+      Generate Final Proposal
+      <span class="material-symbols-outlined align-middle ml-2 text-sm">description</span>
+    </button>
+  </div>
+</div>
