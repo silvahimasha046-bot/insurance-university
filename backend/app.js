@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const rateLimit = require('express-rate-limit');
 
 const { initDb } = require('./src/db');
 const authRoutes = require('./src/routes/auth');
@@ -16,14 +17,32 @@ app.use(cors({ origin: '*' }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// Strict limiter for authentication endpoints (brute-force protection)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later.' }
+});
+
+// General API limiter
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later.' }
+});
+
 // Initialize database (creates schema and seeds data)
 initDb();
 
-app.use('/api/auth', authRoutes);
-app.use('/api/sessions', sessionRoutes);
-app.use('/api/proposals', proposalRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/users', userRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/sessions', apiLimiter, sessionRoutes);
+app.use('/api/proposals', apiLimiter, proposalRoutes);
+app.use('/api/admin', apiLimiter, adminRoutes);
+app.use('/api/users', apiLimiter, userRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
