@@ -1,0 +1,20 @@
+{
+  "name": "insurance-university-backend",
+  "version": "1.0.0",
+  "description": "Insurance Advisory System Backend",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node --watch app.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^12.8.0",
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.1.1",
+    "uuid": "^9.0.0"
+  }
+}
