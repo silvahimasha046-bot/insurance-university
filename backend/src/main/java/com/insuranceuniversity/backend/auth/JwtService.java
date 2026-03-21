@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
-import java.util.Map;
 
 @Service
 public class JwtService {
@@ -25,13 +24,8 @@ public class JwtService {
     }
 
     public String generateToken(String subject) {
-        return generateToken(subject, "ADMIN");
-    }
-
-    public String generateToken(String subject, String role) {
         return Jwts.builder()
                 .subject(subject)
-                .claims(Map.of("role", role))
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expirationMs))
                 .signWith(getSigningKey())
@@ -40,15 +34,6 @@ public class JwtService {
 
     public String extractSubject(String token) {
         return getClaims(token).getSubject();
-    }
-
-    public String extractRole(String token) {
-        try {
-            Object role = getClaims(token).get("role");
-            return role != null ? role.toString() : "USER";
-        } catch (Exception e) {
-            return "USER";
-        }
     }
 
     public boolean isValid(String token) {

@@ -10,13 +10,13 @@
 
     <div class="px-6 py-4 flex flex-col items-center">
       <div class="flex gap-2 mb-2">
-        <span *ngFor="let star of [1,2,3,4,5]"
-              (click)="rating = star"
-              class="material-symbols-outlined text-4xl cursor-pointer"
-              [class.text-primary]="star <= rating"
-              [class.text-[#324d67]]="star > rating">star</span>
+        <span class="material-symbols-outlined text-primary text-4xl cursor-pointer">star</span>
+        <span class="material-symbols-outlined text-primary text-4xl cursor-pointer">star</span>
+        <span class="material-symbols-outlined text-primary text-4xl cursor-pointer">star</span>
+        <span class="material-symbols-outlined text-primary text-4xl cursor-pointer">star</span>
+        <span class="material-symbols-outlined text-[#324d67] text-4xl cursor-pointer">star</span>
       </div>
-      <p class="text-[#92adc9] text-sm">Tap a star to rate ({{ rating }}/5)</p>
+      <p class="text-[#92adc9] text-sm">Tap a star to rate</p>
     </div>
 
     <div class="border-t border-[#324d67] mx-6"></div>
@@ -24,17 +24,16 @@
     <div class="px-6 pb-4">
       <label class="block text-white text-sm font-bold mb-2 ml-1">Any additional feedback?</label>
       <textarea
-        [(ngModel)]="feedback"
         class="w-full bg-[#1c2a38] border border-[#324d67] rounded-lg p-3 text-white placeholder-[#92adc9] focus:outline-none focus:border-primary min-h-[100px] resize-none"
         placeholder="Tell us what we can improve..."
       ></textarea>
     </div>
 
     <div class="px-6 pb-8 flex flex-col gap-3">
-      <button (click)="submitFeedback()" class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3.5 rounded-lg">
+      <button class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3.5 rounded-lg" routerLink="/">
         Submit Feedback
       </button>
-      <button (click)="skip()" class="w-full text-[#92adc9] hover:text-white text-sm font-medium py-2">
+      <button class="w-full text-[#92adc9] hover:text-white text-sm font-medium py-2" routerLink="/">
         Skip Survey
       </button>
     </div>

@@ -1,7 +1,7 @@
 <div class="bg-background-dark font-display min-h-screen text-white">
   <div class="sticky top-0 z-10 flex items-center p-4 justify-between border-b border-[#324d67]/30 bg-background-dark/95 backdrop-blur">
     <div class="flex size-12 items-center cursor-pointer" routerLink="/recommendations/compare">
-      <span class="material-symbols-outlined text-primary dark:text-white">arrow_back</span>
+      <span class="material-symbols-outlined">arrow_back</span>
     </div>
     <h2 class="text-lg font-bold flex-1 text-center pr-12">Step 3 of 4</h2>
   </div>
@@ -11,55 +11,28 @@
     <p class="text-[#92adc9] text-sm mt-1">Provide documents to finalize your application.</p>
 
     <div class="mt-6 space-y-4">
-      <!-- NIC Upload -->
-      <div class="rounded-xl border-2 p-6 text-center"
-           [class.border-green-500]="nicUploaded"
-           [class.border-dashed]="!nicUploaded"
-           [class.border-[#324d67]]="!nicUploaded"
-           [class.bg-[#192633]/30]="!nicUploaded">
+      <div class="rounded-xl border-2 border-dashed border-[#324d67] bg-[#192633]/30 p-6 text-center">
         <p class="font-bold">NIC Front &amp; Back</p>
         <p class="text-[#92adc9] text-xs mt-1">JPEG, PNG or PDF (Max 5MB)</p>
-        <p *ngIf="nicUploaded" class="text-green-400 text-xs mt-2 font-medium">✓ Uploaded</p>
-        <input #nicInput type="file" class="hidden" accept=".jpg,.jpeg,.png,.pdf"
-               (change)="onFileSelected('nic', $event)" />
-        <button *ngIf="!nicUploaded" (click)="nicInput.click()"
-                class="mt-4 h-10 px-4 rounded-lg bg-[#233648] font-bold">Browse Files</button>
+        <button class="mt-4 h-10 px-4 rounded-lg bg-[#233648] font-bold">Browse Files</button>
       </div>
 
-      <!-- Medical Report Upload -->
-      <div class="rounded-xl border-2 p-6 text-center"
-           [class.border-green-500]="medicalUploaded"
-           [class.border-dashed]="!medicalUploaded"
-           [class.border-[#324d67]]="!medicalUploaded"
-           [class.bg-[#192633]/30]="!medicalUploaded">
+      <div class="rounded-xl border-2 border-dashed border-[#324d67] bg-[#192633]/30 p-6 text-center">
         <p class="font-bold">Medical Report</p>
         <p class="text-[#92adc9] text-xs mt-1">Within last 3 months</p>
-        <p *ngIf="medicalUploaded" class="text-green-400 text-xs mt-2 font-medium">✓ Uploaded</p>
-        <input #medInput type="file" class="hidden" accept=".jpg,.jpeg,.png,.pdf"
-               (change)="onFileSelected('medical', $event)" />
-        <button *ngIf="!medicalUploaded" (click)="medInput.click()"
-                class="mt-4 h-10 px-4 rounded-lg bg-[#233648] font-bold">Browse Files</button>
+        <button class="mt-4 h-10 px-4 rounded-lg bg-[#233648] font-bold">Browse Files</button>
       </div>
 
-      <!-- Proof of Income Upload -->
-      <div class="rounded-xl border-2 p-6 text-center"
-           [class.border-green-500]="incomeUploaded"
-           [class.border-dashed]="!incomeUploaded"
-           [class.border-[#324d67]]="!incomeUploaded"
-           [class.bg-[#192633]/30]="!incomeUploaded">
+      <div class="rounded-xl border-2 border-dashed border-[#324d67] bg-[#192633]/30 p-6 text-center">
         <p class="font-bold">Proof of Income</p>
         <p class="text-[#92adc9] text-xs mt-1">Salary slip or clear photo</p>
-        <p *ngIf="incomeUploaded" class="text-green-400 text-xs mt-2 font-medium">✓ Uploaded</p>
-        <input #incomeInput type="file" class="hidden" accept=".jpg,.jpeg,.png,.pdf"
-               (change)="onFileSelected('income', $event)" />
-        <button *ngIf="!incomeUploaded" (click)="incomeInput.click()"
-                class="mt-4 h-10 px-4 rounded-lg bg-[#233648] font-bold">Browse Files</button>
+        <button class="mt-4 h-10 px-4 rounded-lg bg-[#233648] font-bold">Browse Files</button>
       </div>
     </div>
   </div>
 
   <div class="fixed bottom-0 left-0 right-0 p-4 bg-background-dark/95 border-t border-[#324d67]/30 flex gap-3">
     <button class="flex-1 h-12 rounded-xl bg-[#233648] font-bold" routerLink="/recommendations/compare">Previous</button>
-    <button (click)="submit()" class="flex-[2] h-12 rounded-xl bg-primary font-bold">Submit &amp; Finalize</button>
+    <button class="flex-[2] h-12 rounded-xl bg-primary font-bold" routerLink="/proposal/missing">Submit &amp; Finalize</button>
   </div>
 </div>
