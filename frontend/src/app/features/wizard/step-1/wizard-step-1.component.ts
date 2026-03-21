@@ -16,6 +16,7 @@ const CONSENT_KEY = "insurance_privacy_consent_v1";
 export class WizardStep1Component implements OnInit {
   needsText = "";
   showConsentModal = false;
+  isLoggedIn = false;
 
   constructor(
     private wizard: WizardStateService,
@@ -27,6 +28,7 @@ export class WizardStep1Component implements OnInit {
   }
 
   ngOnInit(): void {
+    this.isLoggedIn = !!localStorage.getItem("insurance_auth_token");
     // Show consent modal if not yet accepted
     if (!localStorage.getItem(CONSENT_KEY)) {
       this.showConsentModal = true;
