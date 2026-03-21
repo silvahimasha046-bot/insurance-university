@@ -1,10 +1,10 @@
 import { Routes } from "@angular/router";
-import { LandingComponent } from "./features/landing/landing.component";
+import { HomeComponent } from "./features/home/home.component";
 import { wizardProgressGuard } from "./core/guards/wizard-progress.guard";
 import { adminGuard } from "./core/guards/admin.guard";
 
 export const routes: Routes = [
-  { path: "", component: LandingComponent },
+  { path: "", component: HomeComponent },
 
   {
     path: "login",

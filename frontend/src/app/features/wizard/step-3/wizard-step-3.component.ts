@@ -1,19 +1,21 @@
-import { Component } from "@angular/core";
+import { Component, OnInit } from "@angular/core";
 import { Router, RouterModule } from "@angular/router";
 import { FormsModule } from "@angular/forms";
+import { CommonModule } from "@angular/common";
 import { WizardStateService } from "../../../core/state/wizard-state.service";
 import { CustomerApiService } from "../../../core/customer-api.service";
 
 @Component({
   selector: "app-wizard-step-3",
   standalone: true,
-  imports: [RouterModule, FormsModule],
+  imports: [RouterModule, FormsModule, CommonModule],
   templateUrl: "./wizard-step-3.component.html",
 })
-export class WizardStep3Component {
+export class WizardStep3Component implements OnInit {
   health: "excellent" | "good" | "average" | "poor" = "good";
   tobaccoUse = false;
   conditionsText = "";
+  isLoggedIn = false;
 
   constructor(
     private wizard: WizardStateService,
@@ -23,6 +25,10 @@ export class WizardStep3Component {
     const s = this.wizard.snapshot.step3;
     if (s?.health) this.health = s.health;
     if (typeof s?.tobaccoUse === "boolean") this.tobaccoUse = s.tobaccoUse;
+  }
+
+  ngOnInit(): void {
+    this.isLoggedIn = !!localStorage.getItem("insurance_auth_token");
   }
 
   persist(): void {
