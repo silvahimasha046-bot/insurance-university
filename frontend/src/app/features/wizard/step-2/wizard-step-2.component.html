@@ -193,13 +193,13 @@
               <ng-container *ngFor="let v of [1,2,3,4,5]">
                 <button
                   class="w-8 h-8 rounded-lg border text-xs font-bold transition-colors"
-                  [class.bg-primary]="(item.model === 'prioritySafety' ? prioritySafety : item.model === 'priorityFlexibility' ? priorityFlexibility : item.model === 'priorityEquity' ? priorityEquity : item.model === 'priorityCertainty' ? priorityCertainty : priorityPremiumLevel) === v"
-                  [class.text-white]="(item.model === 'prioritySafety' ? prioritySafety : item.model === 'priorityFlexibility' ? priorityFlexibility : item.model === 'priorityEquity' ? priorityEquity : item.model === 'priorityCertainty' ? priorityCertainty : priorityPremiumLevel) === v"
-                  [class.border-primary]="(item.model === 'prioritySafety' ? prioritySafety : item.model === 'priorityFlexibility' ? priorityFlexibility : item.model === 'priorityEquity' ? priorityEquity : item.model === 'priorityCertainty' ? priorityCertainty : priorityPremiumLevel) === v"
-                  [class.border-slate-200]="(item.model === 'prioritySafety' ? prioritySafety : item.model === 'priorityFlexibility' ? priorityFlexibility : item.model === 'priorityEquity' ? priorityEquity : item.model === 'priorityCertainty' ? priorityCertainty : priorityPremiumLevel) !== v"
-                  [class.dark:border-slate-700]="(item.model === 'prioritySafety' ? prioritySafety : item.model === 'priorityFlexibility' ? priorityFlexibility : item.model === 'priorityEquity' ? priorityEquity : item.model === 'priorityCertainty' ? priorityCertainty : priorityPremiumLevel) !== v"
-                  [class.text-slate-500]="(item.model === 'prioritySafety' ? prioritySafety : item.model === 'priorityFlexibility' ? priorityFlexibility : item.model === 'priorityEquity' ? priorityEquity : item.model === 'priorityCertainty' ? priorityCertainty : priorityPremiumLevel) !== v"
-                  (click)="item.model === 'prioritySafety' ? (prioritySafety = v) : item.model === 'priorityFlexibility' ? (priorityFlexibility = v) : item.model === 'priorityEquity' ? (priorityEquity = v) : item.model === 'priorityCertainty' ? (priorityCertainty = v) : (priorityPremiumLevel = v); persist()">
+                  [class.bg-primary]="getPriorityValue(item.model) === v"
+                  [class.text-white]="getPriorityValue(item.model) === v"
+                  [class.border-primary]="getPriorityValue(item.model) === v"
+                  [class.border-slate-200]="getPriorityValue(item.model) !== v"
+                  [class.dark:border-slate-700]="getPriorityValue(item.model) !== v"
+                  [class.text-slate-500]="getPriorityValue(item.model) !== v"
+                  (click)="setPriorityValue(item.model, v)">
                   {{ v }}
                 </button>
               </ng-container>

@@ -107,6 +107,7 @@ export class RecommendationsComponent implements OnInit {
   }
 
   selectPlanAndGoCompare(product: RankedProduct) {
+    if (product.eligibilityDecision === "No Offer") return;
     this.wizard.setSelectedPlan({
       id: product.code,
       name: product.name,

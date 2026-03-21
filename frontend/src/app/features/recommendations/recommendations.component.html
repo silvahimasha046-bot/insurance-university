@@ -140,8 +140,8 @@
           [class.bg-slate-200]="product.eligibilityDecision === 'No Offer'"
           [class.dark:bg-slate-700]="product.eligibilityDecision === 'No Offer'"
           [class.text-slate-400]="product.eligibilityDecision === 'No Offer'"
-          [disabled]="product.eligibilityDecision === 'No Offer'"
-          (click)="product.eligibilityDecision !== 'No Offer' && selectPlanAndGoCompare(product)">
+          [attr.disabled]="product.eligibilityDecision === 'No Offer' ? true : null"
+          (click)="selectPlanAndGoCompare(product)">
           {{ product.eligibilityDecision === 'No Offer' ? 'Not Eligible' : 'View Details' }}
         </button>
         <button class="h-10 w-10 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center">

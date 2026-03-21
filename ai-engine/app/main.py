@@ -43,6 +43,9 @@ _weights: dict[str, float] = {
 # ---------------------------------------------------------------------------
 MAX_COVERAGE_LKR = 50_000_000  # Rs. 50 million
 
+# Affordability threshold: premium must not exceed this fraction of disposable income
+AFFORDABILITY_THRESHOLD = 0.20
+
 
 # ---------------------------------------------------------------------------
 # Request / Response models
@@ -259,8 +262,10 @@ def _predict_coverage(features: dict[str, Any]) -> float:
                 if ages:
                     youngest = min(ages)
                     years_remaining = max(0, 21 - youngest)
-                    coverage = monthly_expenses * 12 * years_remaining
-                    return round(min(coverage, MAX_COVERAGE_LKR), 0)
+                    if years_remaining > 0:
+                        coverage = monthly_expenses * 12 * years_remaining
+                        return round(min(coverage, MAX_COVERAGE_LKR), 0)
+                    # Youngest child already 21+ — fall through to default 15-year period
             except (ValueError, TypeError):
                 pass
         # Fallback: 15-year education period
@@ -296,7 +301,7 @@ def _affordability_score(monthly_premium: float, income: float) -> float:
         return 0.85
     if ratio <= 0.15:
         return 0.65
-    if ratio <= 0.20:
+    if ratio <= AFFORDABILITY_THRESHOLD:
         return 0.45
     if ratio <= 0.30:
         return 0.25
@@ -317,7 +322,7 @@ def _lapse_probability(features: dict[str, Any], monthly_premium: float) -> floa
     prob = 0.10
     if income > 0:
         ratio = monthly_premium / income
-        if ratio > 0.20:
+        if ratio > AFFORDABILITY_THRESHOLD:
             prob += 0.25
         elif ratio > 0.15:
             prob += 0.15
@@ -399,9 +404,9 @@ def _score_product(
     disposable = max(income - monthly_expenses, 0)
     if disposable > 0:
         premium_ratio = product.basePremium / disposable
-        if premium_ratio > 0.20:
+        if premium_ratio > AFFORDABILITY_THRESHOLD:
             score -= w["afford_penalty"]
-            reasons.append("Premium exceeds 20% of disposable income — affordability penalty applied")
+            reasons.append(f"Premium exceeds {int(AFFORDABILITY_THRESHOLD * 100)}% of disposable income — affordability penalty applied")
 
     # Apply collaborative filtering boosts
     cf_delta, cf_reasons = _collaborative_filter_boost(features, product, w)

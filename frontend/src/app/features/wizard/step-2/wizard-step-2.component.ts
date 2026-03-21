@@ -88,6 +88,27 @@ export class WizardStep2Component implements OnInit {
     });
   }
 
+  getPriorityValue(model: string): number {
+    switch (model) {
+      case "prioritySafety": return this.prioritySafety;
+      case "priorityFlexibility": return this.priorityFlexibility;
+      case "priorityEquity": return this.priorityEquity;
+      case "priorityCertainty": return this.priorityCertainty;
+      default: return this.priorityPremiumLevel;
+    }
+  }
+
+  setPriorityValue(model: string, value: number): void {
+    switch (model) {
+      case "prioritySafety": this.prioritySafety = value; break;
+      case "priorityFlexibility": this.priorityFlexibility = value; break;
+      case "priorityEquity": this.priorityEquity = value; break;
+      case "priorityCertainty": this.priorityCertainty = value; break;
+      default: this.priorityPremiumLevel = value; break;
+    }
+    this.persist();
+  }
+
   next(): void {
     this.persist();
     const sessionId = this.customerApi.getStoredSessionId();
