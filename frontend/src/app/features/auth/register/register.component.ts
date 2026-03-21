@@ -3,6 +3,7 @@ import { Router, RouterModule } from "@angular/router";
 import { FormsModule } from "@angular/forms";
 import { CommonModule } from "@angular/common";
 import { HttpClient } from "@angular/common/http";
+import { CustomerAuthService } from "../../../core/services/customer-auth.service";
 
 @Component({
   selector: "app-register",
@@ -17,22 +18,26 @@ export class RegisterComponent {
   errorMessage = "";
   loading = false;
 
-  constructor(private http: HttpClient, private router: Router) {}
+  constructor(
+    private http: HttpClient,
+    private router: Router,
+    private customerAuth: CustomerAuthService,
+  ) {}
 
   register(): void {
     this.errorMessage = "";
     this.loading = true;
     this.http
-      .post<{ token: string; name: string }>("http://localhost:8080/api/auth/register", {
+      .post<{ token: string; name: string; email: string }>("http://localhost:8080/api/auth/register", {
         name: this.name,
         email: this.email,
         password: this.password,
       })
       .subscribe({
         next: (res) => {
-          localStorage.setItem("insurance_auth_token", res.token);
+          this.customerAuth.storeSession(res.token, res.name, res.email);
           this.loading = false;
-          this.router.navigateByUrl("/wizard/step-1");
+          this.router.navigateByUrl("/customer/dashboard");
         },
         error: (err) => {
           this.loading = false;
