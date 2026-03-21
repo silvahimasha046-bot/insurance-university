@@ -30,12 +30,20 @@
         </div>
       </div>
 
+      <ng-container *ngIf="!isLoggedIn">
+        <button class="text-gray-600 dark:text-gray-400 text-sm font-bold leading-normal" routerLink="/login">
+          Login
+        </button>
+        <button class="bg-primary text-white text-xs px-3 py-1.5 rounded-lg font-bold" routerLink="/register">
+          Register Account
+        </button>
+      </ng-container>
       <button
-        class="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-5 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-colors"
-        routerLink="/wizard/step-1"
+        *ngIf="isLoggedIn"
+        class="text-gray-600 dark:text-gray-400 text-sm font-bold leading-normal flex items-center gap-1"
+        (click)="logout()"
       >
-        <span class="material-symbols-outlined text-base mr-1">smart_toy</span>
-        <span>Start AI Advisor</span>
+        <span class="material-symbols-outlined text-base">logout</span> Logout
       </button>
     </div>
   </nav>

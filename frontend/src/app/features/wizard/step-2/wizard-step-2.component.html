@@ -4,7 +4,13 @@
       <div class="flex size-12 items-center cursor-pointer" routerLink="/wizard/step-1">
         <span class="material-symbols-outlined text-primary dark:text-white">arrow_back</span>
       </div>
-      <h2 class="text-gray-900 dark:text-white text-lg font-bold flex-1 text-center pr-12">Intake Wizard</h2>
+      <h2 class="text-gray-900 dark:text-white text-lg font-bold flex-1 text-center">Intake Wizard</h2>
+      <div class="flex items-center gap-2">
+        <ng-container *ngIf="!isLoggedIn">
+          <a routerLink="/login" class="text-gray-600 dark:text-gray-400 text-xs font-bold leading-normal hover:text-primary transition-colors">Login</a>
+          <a routerLink="/register" class="bg-primary text-white text-xs px-2.5 py-1 rounded-lg font-bold hover:bg-primary/90 transition-colors">Register</a>
+        </ng-container>
+      </div>
     </div>
 
     <div class="flex flex-col items-center py-5 gap-2">

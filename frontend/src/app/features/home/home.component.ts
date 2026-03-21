@@ -14,8 +14,10 @@ const LANG_KEY = "insurance_ui_language";
 export class HomeComponent implements OnInit {
   langMenuOpen = false;
   selectedLangLabel = "EN";
+  isLoggedIn = false;
 
   ngOnInit(): void {
+    this.isLoggedIn = !!localStorage.getItem("insurance_auth_token");
     const saved = localStorage.getItem(LANG_KEY);
     if (saved === "si") this.selectedLangLabel = "සිං";
     else this.selectedLangLabel = "EN";
@@ -29,6 +31,12 @@ export class HomeComponent implements OnInit {
     this.selectedLangLabel = label;
     this.langMenuOpen = false;
     localStorage.setItem(LANG_KEY, code);
+  }
+
+  logout(): void {
+    localStorage.removeItem("insurance_auth_token");
+    localStorage.removeItem("insurance_customer_session_id");
+    this.isLoggedIn = false;
   }
 
   @HostListener("document:click", ["$event"])

@@ -1,18 +1,20 @@
-import { Component } from "@angular/core";
+import { Component, OnInit } from "@angular/core";
 import { Router, RouterModule } from "@angular/router";
 import { FormsModule } from "@angular/forms";
+import { CommonModule } from "@angular/common";
 import { WizardStateService } from "../../../core/state/wizard-state.service";
 import { CustomerApiService } from "../../../core/customer-api.service";
 
 @Component({
   selector: "app-wizard-step-2",
   standalone: true,
-  imports: [RouterModule, FormsModule],
+  imports: [RouterModule, FormsModule, CommonModule],
   templateUrl: "./wizard-step-2.component.html",
 })
-export class WizardStep2Component {
+export class WizardStep2Component implements OnInit {
   monthlyIncomeLkr = 75000;
   loansText = "";
+  isLoggedIn = false;
 
   constructor(
     private wizard: WizardStateService,
@@ -22,6 +24,10 @@ export class WizardStep2Component {
     const s = this.wizard.snapshot.step2;
     if (typeof s?.monthlyIncomeLkr === "number") this.monthlyIncomeLkr = s.monthlyIncomeLkr;
     if (typeof s?.loansText === "string") this.loansText = s.loansText;
+  }
+
+  ngOnInit(): void {
+    this.isLoggedIn = !!localStorage.getItem("insurance_auth_token");
   }
 
   persist() {
