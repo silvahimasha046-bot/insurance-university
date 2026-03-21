@@ -1,7 +1,66 @@
+// Angular Material theme (must come before Tailwind to allow Tailwind to override where needed)
+@use '@angular/material' as mat;
+
+@include mat.core();
+
+$light-theme: mat.define-theme((
+  color: (
+    theme-type: light,
+    primary: mat.$azure-palette,
+    tertiary: mat.$blue-palette,
+  ),
+  typography: (
+    brand-family: 'Manrope, sans-serif',
+    plain-family: 'Manrope, sans-serif',
+  ),
+  density: (
+    scale: 0,
+  ),
+));
+
+$dark-theme: mat.define-theme((
+  color: (
+    theme-type: dark,
+    primary: mat.$azure-palette,
+    tertiary: mat.$blue-palette,
+  ),
+  typography: (
+    brand-family: 'Manrope, sans-serif',
+    plain-family: 'Manrope, sans-serif',
+  ),
+  density: (
+    scale: 0,
+  ),
+));
+
+:root {
+  @include mat.all-component-themes($light-theme);
+}
+
+.dark {
+  @include mat.all-component-themes($dark-theme);
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 html, body {
   height: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Manrope', sans-serif;
+}
+
+// Consistent focus ring for accessibility
+*:focus-visible {
+  outline: 2px solid #137fec;
+  outline-offset: 2px;
+}
+
+// Smooth link transitions
+a {
+  transition: color 0.15s ease, opacity 0.15s ease;
 }
