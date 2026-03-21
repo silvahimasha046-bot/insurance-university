@@ -10,28 +10,71 @@
   </div>
 
   <div class="p-4 max-w-xl mx-auto">
-    <h3 class="text-2xl font-bold">Compare Plans</h3>
-    <p class="text-slate-500 dark:text-[#92adc9] text-sm mt-1">AI-powered analysis of best matches</p>
+    <h3 class="text-2xl font-bold">Your Selected Plan</h3>
+    <p class="text-slate-500 dark:text-[#92adc9] text-sm mt-1">AI-powered analysis of your best match</p>
 
-    <div class="mt-6 space-y-4">
+    <!-- No plan selected fallback -->
+    <div *ngIf="!selectedPlan" class="mt-8 text-center text-slate-400">
+      <span class="material-symbols-outlined text-5xl mb-2">info</span>
+      <p>No plan selected yet. Go back and pick a plan.</p>
+      <button class="mt-4 px-6 py-3 rounded-xl border border-gray-200 dark:border-gray-700 font-bold"
+              routerLink="/recommendations">Back to Recommendations</button>
+    </div>
+
+    <!-- Plan detail card -->
+    <div *ngIf="selectedPlan" class="mt-6 space-y-4">
+
+      <!-- Plan header -->
+      <div class="rounded-xl p-5 bg-primary/10 border border-primary/30">
+        <p class="text-primary text-xs font-bold uppercase tracking-wider mb-1">AI Best Match</p>
+        <h4 class="text-xl font-bold">{{ selectedPlan.name }}</h4>
+        <p class="text-slate-500 dark:text-[#92adc9] text-sm mt-1">Product code: {{ selectedPlan.id }}</p>
+      </div>
+
+      <!-- Key metrics -->
       <div class="rounded-xl p-4 bg-white dark:bg-[#1a2632] border border-gray-100 dark:border-gray-800">
         <h4 class="text-primary text-xs font-bold uppercase tracking-wider mb-3">Key Metrics</h4>
+
         <div class="flex justify-between py-2 border-b border-gray-50 dark:border-gray-800">
           <span class="text-slate-500 dark:text-[#92adc9]">Monthly Premium</span>
-          <span class="font-bold">Rs. 4,250</span>
+          <span class="font-bold">Rs. {{ selectedPlan.premiumLkrPerMonth | number:'1.0-0' }}</span>
         </div>
+
         <div class="flex justify-between py-2 border-b border-gray-50 dark:border-gray-800">
-          <span class="text-slate-500 dark:text-[#92adc9]">Suitability</span>
-          <span class="font-bold text-green-500">95%</span>
+          <span class="text-slate-500 dark:text-[#92adc9]">AI Suitability Score</span>
+          <span class="font-bold" [class.text-green-500]="selectedPlan.matchPercent >= 70"
+                                  [class.text-amber-500]="selectedPlan.matchPercent < 70">
+            {{ selectedPlan.matchPercent }}%
+          </span>
+        </div>
+
+        <div class="flex justify-between py-2">
+          <span class="text-slate-500 dark:text-[#92adc9]">Annual Cost</span>
+          <span class="font-bold">Rs. {{ (selectedPlan.premiumLkrPerMonth * 12) | number:'1.0-0' }}</span>
         </div>
       </div>
 
-      <button class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-xl" routerLink="/proposal/upload">
-        Select Smart Life Plan
+      <!-- Suitability bar -->
+      <div class="rounded-xl p-4 bg-white dark:bg-[#1a2632] border border-gray-100 dark:border-gray-800">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-sm font-semibold text-slate-500 dark:text-[#92adc9]">Match Strength</span>
+          <span class="text-sm font-bold text-primary">{{ selectedPlan.matchPercent }}%</span>
+        </div>
+        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+          <div class="bg-primary h-2.5 rounded-full transition-all"
+               [style.width.%]="selectedPlan.matchPercent"></div>
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <button (click)="proceed()"
+        class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-xl">
+        Select {{ selectedPlan.name }}
         <span class="material-symbols-outlined align-middle ml-2">arrow_forward</span>
       </button>
 
-      <button class="w-full border border-gray-200 dark:border-gray-800 font-bold py-4 rounded-xl" routerLink="/simulator">
+      <button class="w-full border border-gray-200 dark:border-gray-800 font-bold py-4 rounded-xl"
+              routerLink="/simulator">
         Run What-if Simulation
       </button>
     </div>

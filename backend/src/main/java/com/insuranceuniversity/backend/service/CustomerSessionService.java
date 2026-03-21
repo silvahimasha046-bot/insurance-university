@@ -5,11 +5,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.insuranceuniversity.backend.entity.CustomerAnswerEntity;
 import com.insuranceuniversity.backend.entity.CustomerSessionEntity;
+import com.insuranceuniversity.backend.entity.EligibilityRuleEntity;
 import com.insuranceuniversity.backend.entity.ProductEntity;
 import com.insuranceuniversity.backend.entity.RecommendationRunEntity;
 import com.insuranceuniversity.backend.entity.SessionLogEntity;
 import com.insuranceuniversity.backend.repository.CustomerAnswerRepository;
 import com.insuranceuniversity.backend.repository.CustomerSessionRepository;
+import com.insuranceuniversity.backend.repository.EligibilityRuleRepository;
 import com.insuranceuniversity.backend.repository.RecommendationRunRepository;
 import com.insuranceuniversity.backend.repository.SessionLogRepository;
 import org.slf4j.Logger;
@@ -38,6 +40,7 @@ public class CustomerSessionService {
     private final SessionLogRepository sessionLogRepo;
     private final ProductService productService;
     private final AiEngineClient aiEngineClient;
+    private final EligibilityRuleRepository eligibilityRuleRepo;
     private final ObjectMapper objectMapper;
 
     public CustomerSessionService(
@@ -47,6 +50,7 @@ public class CustomerSessionService {
             SessionLogRepository sessionLogRepo,
             ProductService productService,
             AiEngineClient aiEngineClient,
+            EligibilityRuleRepository eligibilityRuleRepo,
             ObjectMapper objectMapper) {
         this.sessionRepo = sessionRepo;
         this.answerRepo = answerRepo;
@@ -54,6 +58,7 @@ public class CustomerSessionService {
         this.sessionLogRepo = sessionLogRepo;
         this.productService = productService;
         this.aiEngineClient = aiEngineClient;
+        this.eligibilityRuleRepo = eligibilityRuleRepo;
         this.objectMapper = objectMapper;
     }
 
@@ -69,10 +74,36 @@ public class CustomerSessionService {
         return entity.getId();
     }
 
+    /** List recent sessions (for authenticated user view). */
+    public List<Map<String, Object>> listSessions() {
+        return sessionRepo.findAll().stream()
+                .sorted(java.util.Comparator.comparing(CustomerSessionEntity::getCreatedAt).reversed())
+                .limit(50)
+                .map(s -> {
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("sessionId", s.getId());
+                    m.put("status", s.getStatus());
+                    m.put("createdAt", s.getCreatedAt().toString());
+                    m.put("updatedAt", s.getUpdatedAt().toString());
+                    return m;
+                })
+                .collect(Collectors.toList());
+    }
+
     /** Retrieve session by id or throw. */
     public CustomerSessionEntity getSession(String sessionId) {
         return sessionRepo.findById(sessionId)
                 .orElseThrow(() -> new IllegalArgumentException("Session not found: " + sessionId));
+    }
+
+    /** Delete a session and all its answers (consent withdrawal). */
+    @Transactional
+    public void deleteSession(String sessionId) {
+        if (!sessionRepo.existsById(sessionId)) return;
+        // Write log before deletion so there is no FK concern
+        writeSessionLog(sessionId, "SESSION_DELETED", "consent_withdrawn");
+        answerRepo.deleteBySessionId(sessionId);
+        sessionRepo.deleteById(sessionId);
     }
 
     /** Retrieve all stored answers for a session. */
@@ -113,9 +144,10 @@ public class CustomerSessionService {
         // Build feature map from stored answers
         Map<String, Object> features = buildFeatures(sessionId);
 
-        // Load products
+        // Load products and apply eligibility rules
         List<ProductEntity> products = productService.listProducts();
-        List<Map<String, Object>> productMaps = products.stream()
+        List<ProductEntity> eligibleProducts = applyEligibilityRules(products, features);
+        List<Map<String, Object>> productMaps = eligibleProducts.stream()
                 .map(this::toProductMap)
                 .collect(Collectors.toList());
 
@@ -154,6 +186,55 @@ public class CustomerSessionService {
     }
 
     // -----------------------------------------------------------------------
+
+    // -----------------------------------------------------------------------
+
+    /**
+     * Apply active eligibility rules to filter out ineligible products.
+     * Rules are JSON objects with optional fields: minAge, maxAge, smokerAllowed (bool).
+     */
+    private List<ProductEntity> applyEligibilityRules(List<ProductEntity> products,
+                                                       Map<String, Object> features) {
+        List<EligibilityRuleEntity> rules = eligibilityRuleRepo.findAll();
+        if (rules.isEmpty()) return products;
+
+        int age = 0;
+        if (features.get("age") instanceof Number n) age = n.intValue();
+
+        boolean smoker = false;
+        if (features.get("smoker") instanceof Boolean b) smoker = b;
+
+        final int userAge = age;
+        final boolean userSmoker = smoker;
+
+        return products.stream().filter(p -> {
+            for (EligibilityRuleEntity rule : rules) {
+                try {
+                    if (rule.getRuleJson() == null || rule.getRuleJson().isBlank()) continue;
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> ruleMap = objectMapper.readValue(rule.getRuleJson(), Map.class);
+
+                    // Check age constraints
+                    if (ruleMap.get("minAge") instanceof Number minAge && userAge > 0
+                            && userAge < minAge.intValue()) {
+                        return false;
+                    }
+                    if (ruleMap.get("maxAge") instanceof Number maxAge && userAge > 0
+                            && userAge > maxAge.intValue()) {
+                        return false;
+                    }
+                    // Check smoker constraint
+                    if (ruleMap.get("smokerAllowed") instanceof Boolean smokerAllowed
+                            && !smokerAllowed && userSmoker) {
+                        return false;
+                    }
+                } catch (JsonProcessingException e) {
+                    log.warn("Could not parse rule JSON for rule id={}: {}", rule.getId(), e.getMessage());
+                }
+            }
+            return true;
+        }).collect(Collectors.toList());
+    }
 
     private Map<String, Object> buildFeatures(String sessionId) {
         List<CustomerAnswerEntity> answers = answerRepo.findBySessionId(sessionId);

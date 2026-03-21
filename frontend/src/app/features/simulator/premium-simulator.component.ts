@@ -1,12 +1,14 @@
-import { Component } from "@angular/core";
-import { RouterModule } from "@angular/router";
-import { WizardStateService } from "../../core/state/wizard-state.service";
+import { Component } from '@angular/core';
+import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { WizardStateService } from '../../core/state/wizard-state.service';
 
 @Component({
-  selector: "app-premium-simulator",
   standalone: true,
-  imports: [RouterModule],
-  templateUrl: "./premium-simulator.component.html",
+  selector: 'app-premium-simulator',
+  imports: [RouterModule, FormsModule, CommonModule],
+  templateUrl: './premium-simulator.component.html',
 })
 export class PremiumSimulatorComponent {
   basePremium = 12400;
@@ -16,7 +18,7 @@ export class PremiumSimulatorComponent {
 
   constructor(private wizard: WizardStateService) {
     const plan = wizard.snapshot.selectedPlan;
-    if (plan) {
+    if (plan?.premiumLkrPerMonth) {
       this.basePremium = plan.premiumLkrPerMonth;
     }
   }
@@ -26,5 +28,9 @@ export class PremiumSimulatorComponent {
     if (this.addCriticalIllness) total += this.basePremium * 0.15;
     if (this.addAccidentRider) total += this.basePremium * 0.08;
     return Math.round(total);
+  }
+
+  get coverageLabel(): string {
+    return `${this.coverageMultiplier.toFixed(1)}×`;
   }
 }

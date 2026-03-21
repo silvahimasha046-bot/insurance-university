@@ -15,24 +15,64 @@
     <h3 class="text-2xl font-bold">AI Recommended for You</h3>
     <p class="text-slate-500 dark:text-[#92adc9] text-sm mt-1">Based on your profile.</p>
 
+    <!-- Sort controls -->
+    <div class="mt-4 flex gap-2 overflow-x-auto pb-1">
+      <button *ngFor="let opt of [
+          {key:'suitability', label:'Suitability'},
+          {key:'price', label:'Lowest Price'},
+          {key:'affordability', label:'Affordability'}
+        ]"
+        (click)="setSortKey(opt.key)"
+        class="flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-semibold border transition-colors"
+        [class.bg-primary]="sortKey === opt.key"
+        [class.text-white]="sortKey === opt.key"
+        [class.border-primary]="sortKey === opt.key"
+        [class.border-slate-200]="sortKey !== opt.key"
+        [class.dark:border-slate-700]="sortKey !== opt.key"
+        [class.text-slate-600]="sortKey !== opt.key"
+        [class.dark:text-slate-300]="sortKey !== opt.key">
+        {{ opt.label }}
+      </button>
+    </div>
+
     <!-- Loading state -->
-    <div *ngIf="loading" class="mt-8 text-center text-slate-400">Loading recommendations…</div>
+    <div *ngIf="loading" class="mt-8 text-center text-slate-400">
+      <span class="material-symbols-outlined text-4xl animate-spin">sync</span>
+      <p class="mt-2">Loading recommendations…</p>
+    </div>
 
     <!-- Error banner -->
     <div *ngIf="error" class="mt-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 text-sm">
       {{ error }}
     </div>
 
+    <!-- No results message -->
+    <div *ngIf="!loading && rankedProducts.length === 0 && !error"
+      class="mt-8 text-center rounded-xl border border-slate-200 dark:border-slate-700 p-8">
+      <span class="material-symbols-outlined text-4xl text-slate-400">search_off</span>
+      <p class="mt-2 font-semibold">No matching products found</p>
+      <p class="text-sm text-slate-500 dark:text-[#92adc9] mt-1">Please contact an advisor for a referral.</p>
+      <a class="mt-4 inline-block text-primary font-bold text-sm" routerLink="/wizard/step-1">Start Over</a>
+    </div>
+
     <!-- Ranked product cards -->
     <div *ngFor="let product of rankedProducts; let i = index"
          class="mt-6 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#192633] shadow-lg">
       <div class="p-4 flex justify-between items-start">
-        <div>
-          <p class="text-primary text-xs font-bold uppercase tracking-wider">
-            {{ i === 0 ? 'Best Value Choice' : 'Recommended' }}
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 flex-wrap">
+            <p class="text-primary text-xs font-bold uppercase tracking-wider">
+              {{ i === 0 ? 'Best Match' : 'Recommended' }}
+            </p>
+            <span *ngIf="product.policyType"
+              class="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">
+              {{ product.policyType }}
+            </span>
+          </div>
+          <h4 class="text-lg font-bold mt-0.5">{{ product.name }}</h4>
+          <p class="text-slate-500 dark:text-[#92adc9] text-xs mt-1">
+            {{ (product.score * 100).toFixed(0) }}% suitability match
           </p>
-          <h4 class="text-lg font-bold">{{ product.name }}</h4>
-          <p class="text-slate-500 dark:text-[#92adc9] text-xs mt-1">{{ (product.score * 100).toFixed(0) }}% match</p>
           <ul class="mt-2 space-y-0.5">
             <li *ngFor="let reason of product.reasons" class="text-xs text-slate-400 dark:text-slate-500">• {{ reason }}</li>
           </ul>
@@ -43,12 +83,24 @@
         </div>
       </div>
 
+      <!-- Financial metrics row -->
+      <div class="px-4 pb-3 flex gap-4 text-xs text-slate-500 dark:text-[#92adc9]">
+        <span *ngIf="product.affordabilityScore != null">
+          <span class="font-semibold text-slate-700 dark:text-slate-300">Affordability:</span>
+          {{ (product.affordabilityScore * 100).toFixed(0) }}%
+        </span>
+        <span *ngIf="product.lapseProbability != null">
+          <span class="font-semibold text-slate-700 dark:text-slate-300">Lapse risk:</span>
+          {{ (product.lapseProbability * 100).toFixed(0) }}%
+        </span>
+      </div>
+
       <div class="p-4 pt-0 flex gap-2">
         <button class="flex-1 h-10 rounded-lg bg-primary text-white font-bold" (click)="selectPlanAndGoCompare(product)">
           View Details
         </button>
-        <button class="h-10 w-10 rounded-lg border border-slate-200 dark:border-slate-700">
-          <span class="material-symbols-outlined">share</span>
+        <button class="h-10 w-10 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center">
+          <span class="material-symbols-outlined text-slate-400">share</span>
         </button>
       </div>
     </div>

@@ -1,7 +1,7 @@
 <div class="bg-background-dark font-display min-h-screen text-white">
   <div class="sticky top-0 z-10 flex items-center p-4 justify-between border-b border-[#324d67]/30 bg-background-dark/95 backdrop-blur">
     <div class="flex size-12 items-center cursor-pointer" routerLink="/recommendations/compare">
-      <span class="material-symbols-outlined text-primary dark:text-white">arrow_back</span>
+      <span class="material-symbols-outlined">arrow_back</span>
     </div>
     <h2 class="text-lg font-bold flex-1 text-center pr-12">Step 3 of 4</h2>
   </div>
@@ -12,48 +12,60 @@
 
     <div class="mt-6 space-y-4">
       <!-- NIC Upload -->
-      <div class="rounded-xl border-2 p-6 text-center"
+      <div class="rounded-xl border-2 p-6 text-center transition-colors"
            [class.border-green-500]="nicUploaded"
            [class.border-dashed]="!nicUploaded"
            [class.border-[#324d67]]="!nicUploaded"
            [class.bg-[#192633]/30]="!nicUploaded">
+        <span class="material-symbols-outlined text-3xl mb-1"
+              [class.text-green-400]="nicUploaded"
+              [class.text-[#92adc9]]="!nicUploaded">badge</span>
         <p class="font-bold">NIC Front &amp; Back</p>
         <p class="text-[#92adc9] text-xs mt-1">JPEG, PNG or PDF (Max 5MB)</p>
         <p *ngIf="nicUploaded" class="text-green-400 text-xs mt-2 font-medium">✓ Uploaded</p>
+        <p *ngIf="nicUploading" class="text-[#92adc9] text-xs mt-2">Uploading…</p>
         <input #nicInput type="file" class="hidden" accept=".jpg,.jpeg,.png,.pdf"
                (change)="onFileSelected('nic', $event)" />
-        <button *ngIf="!nicUploaded" (click)="nicInput.click()"
-                class="mt-4 h-10 px-4 rounded-lg bg-[#233648] font-bold">Browse Files</button>
+        <button *ngIf="!nicUploaded && !nicUploading" (click)="nicInput.click()"
+                class="mt-4 h-10 px-4 rounded-lg bg-[#233648] font-bold hover:bg-[#2d4560]">Browse Files</button>
       </div>
 
       <!-- Medical Report Upload -->
-      <div class="rounded-xl border-2 p-6 text-center"
+      <div class="rounded-xl border-2 p-6 text-center transition-colors"
            [class.border-green-500]="medicalUploaded"
            [class.border-dashed]="!medicalUploaded"
            [class.border-[#324d67]]="!medicalUploaded"
            [class.bg-[#192633]/30]="!medicalUploaded">
+        <span class="material-symbols-outlined text-3xl mb-1"
+              [class.text-green-400]="medicalUploaded"
+              [class.text-[#92adc9]]="!medicalUploaded">medical_information</span>
         <p class="font-bold">Medical Report</p>
         <p class="text-[#92adc9] text-xs mt-1">Within last 3 months</p>
         <p *ngIf="medicalUploaded" class="text-green-400 text-xs mt-2 font-medium">✓ Uploaded</p>
+        <p *ngIf="medicalUploading" class="text-[#92adc9] text-xs mt-2">Uploading…</p>
         <input #medInput type="file" class="hidden" accept=".jpg,.jpeg,.png,.pdf"
                (change)="onFileSelected('medical', $event)" />
-        <button *ngIf="!medicalUploaded" (click)="medInput.click()"
-                class="mt-4 h-10 px-4 rounded-lg bg-[#233648] font-bold">Browse Files</button>
+        <button *ngIf="!medicalUploaded && !medicalUploading" (click)="medInput.click()"
+                class="mt-4 h-10 px-4 rounded-lg bg-[#233648] font-bold hover:bg-[#2d4560]">Browse Files</button>
       </div>
 
       <!-- Proof of Income Upload -->
-      <div class="rounded-xl border-2 p-6 text-center"
+      <div class="rounded-xl border-2 p-6 text-center transition-colors"
            [class.border-green-500]="incomeUploaded"
            [class.border-dashed]="!incomeUploaded"
            [class.border-[#324d67]]="!incomeUploaded"
            [class.bg-[#192633]/30]="!incomeUploaded">
+        <span class="material-symbols-outlined text-3xl mb-1"
+              [class.text-green-400]="incomeUploaded"
+              [class.text-[#92adc9]]="!incomeUploaded">receipt_long</span>
         <p class="font-bold">Proof of Income</p>
-        <p class="text-[#92adc9] text-xs mt-1">Salary slip or clear photo</p>
+        <p class="text-[#92adc9] text-xs mt-1">Salary slip or bank statement</p>
         <p *ngIf="incomeUploaded" class="text-green-400 text-xs mt-2 font-medium">✓ Uploaded</p>
+        <p *ngIf="incomeUploading" class="text-[#92adc9] text-xs mt-2">Uploading…</p>
         <input #incomeInput type="file" class="hidden" accept=".jpg,.jpeg,.png,.pdf"
                (change)="onFileSelected('income', $event)" />
-        <button *ngIf="!incomeUploaded" (click)="incomeInput.click()"
-                class="mt-4 h-10 px-4 rounded-lg bg-[#233648] font-bold">Browse Files</button>
+        <button *ngIf="!incomeUploaded && !incomeUploading" (click)="incomeInput.click()"
+                class="mt-4 h-10 px-4 rounded-lg bg-[#233648] font-bold hover:bg-[#2d4560]">Browse Files</button>
       </div>
     </div>
   </div>

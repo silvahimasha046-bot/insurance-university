@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
-import java.util.Map;
 
 @Service
 public class JwtService {
@@ -24,31 +23,30 @@ public class JwtService {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(String subject) {
-        return generateToken(subject, "ADMIN");
-    }
-
+    /** Generate token with role claim. */
     public String generateToken(String subject, String role) {
         return Jwts.builder()
                 .subject(subject)
-                .claims(Map.of("role", role))
+                .claim("role", role)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expirationMs))
                 .signWith(getSigningKey())
                 .compact();
     }
 
+    /** Backwards-compatible overload defaults to USER role. */
+    public String generateToken(String subject) {
+        return generateToken(subject, "USER");
+    }
+
     public String extractSubject(String token) {
         return getClaims(token).getSubject();
     }
 
+    /** Extract the 'role' claim; defaults to USER if absent. */
     public String extractRole(String token) {
-        try {
-            Object role = getClaims(token).get("role");
-            return role != null ? role.toString() : "USER";
-        } catch (Exception e) {
-            return "USER";
-        }
+        Object role = getClaims(token).get("role");
+        return role instanceof String s ? s : "USER";
     }
 
     public boolean isValid(String token) {

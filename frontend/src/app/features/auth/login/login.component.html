@@ -22,7 +22,9 @@
       <label class="flex flex-col">
         <p class="text-gray-900 dark:text-white text-sm font-medium pb-2">Email</p>
         <div class="flex">
-          <input [(ngModel)]="email" class="flex-1 h-14 rounded-l-lg border border-gray-300 dark:border-[#324d67] bg-white dark:bg-[#192633] px-4 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-[#92adc9] focus:border-primary focus:ring-0" placeholder="Enter your email" type="email" />
+          <input [(ngModel)]="email" (keyup.enter)="login()"
+            class="flex-1 h-14 rounded-l-lg border border-gray-300 dark:border-[#324d67] bg-white dark:bg-[#192633] px-4 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-[#92adc9] focus:border-primary focus:ring-0"
+            placeholder="Enter your email" type="email" />
           <div class="h-14 px-4 flex items-center rounded-r-lg border border-l-0 border-gray-300 dark:border-[#324d67] bg-white dark:bg-[#192633] text-gray-400 dark:text-[#92adc9]">
             <span class="material-symbols-outlined">mail</span>
           </div>
@@ -34,7 +36,9 @@
       <label class="flex flex-col">
         <p class="text-gray-900 dark:text-white text-sm font-medium pb-2">Password</p>
         <div class="flex">
-          <input [(ngModel)]="password" class="flex-1 h-14 rounded-l-lg border border-gray-300 dark:border-[#324d67] bg-white dark:bg-[#192633] px-4 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-[#92adc9] focus:border-primary focus:ring-0" placeholder="Enter your password" type="password" />
+          <input [(ngModel)]="password" (keyup.enter)="login()"
+            class="flex-1 h-14 rounded-l-lg border border-gray-300 dark:border-[#324d67] bg-white dark:bg-[#192633] px-4 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-[#92adc9] focus:border-primary focus:ring-0"
+            placeholder="Enter your password" type="password" />
           <div class="h-14 px-4 flex items-center rounded-r-lg border border-l-0 border-gray-300 dark:border-[#324d67] bg-white dark:bg-[#192633] text-gray-400 dark:text-[#92adc9]">
             <span class="material-symbols-outlined">lock</span>
           </div>
@@ -47,8 +51,9 @@
     </div>
 
     <div class="px-4 py-6">
-      <button (click)="login()" class="w-full bg-primary text-white font-bold py-4 rounded-lg text-base hover:bg-primary/90 transition-colors">
-        Log In
+      <button (click)="login()" [disabled]="loading"
+        class="w-full bg-primary text-white font-bold py-4 rounded-lg text-base hover:bg-primary/90 transition-colors disabled:opacity-60">
+        {{ loading ? 'Logging in…' : 'Log In' }}
       </button>
     </div>
 

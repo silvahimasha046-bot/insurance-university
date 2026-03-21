@@ -15,11 +15,13 @@ export class RegisterComponent {
   email = "";
   password = "";
   errorMessage = "";
+  loading = false;
 
   constructor(private http: HttpClient, private router: Router) {}
 
   register(): void {
     this.errorMessage = "";
+    this.loading = true;
     this.http
       .post<{ token: string; name: string }>("http://localhost:8080/api/auth/register", {
         name: this.name,
@@ -29,9 +31,11 @@ export class RegisterComponent {
       .subscribe({
         next: (res) => {
           localStorage.setItem("insurance_auth_token", res.token);
+          this.loading = false;
           this.router.navigateByUrl("/wizard/step-1");
         },
         error: (err) => {
+          this.loading = false;
           this.errorMessage = err?.error?.error ?? "Registration failed. Please try again.";
         },
       });

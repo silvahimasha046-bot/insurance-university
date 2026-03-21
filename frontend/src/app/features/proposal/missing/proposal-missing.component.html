@@ -15,38 +15,43 @@
 
     <div class="mt-6 space-y-4">
       <label class="block">
-        <p class="font-medium pb-2">Address Line 1</p>
-        <input class="w-full h-14 rounded-lg border border-[#324d67] bg-[#192633] px-4 text-white placeholder:text-[#92adc9] focus:border-primary focus:ring-0" placeholder="No. 123, Galle Road" />
+        <p class="font-medium pb-2">Address Line 1 <span class="text-red-400">*</span></p>
+        <input [(ngModel)]="addressLine1"
+          class="w-full h-14 rounded-lg border border-[#324d67] bg-[#192633] px-4 text-white placeholder:text-[#92adc9] focus:border-primary focus:outline-none"
+          placeholder="No. 123, Galle Road" />
       </label>
 
       <label class="block">
-        <p class="font-medium pb-2">City</p>
-        <input class="w-full h-14 rounded-lg border border-[#324d67] bg-[#192633] px-4 text-white placeholder:text-[#92adc9] focus:border-primary focus:ring-0" placeholder="Colombo 03" />
+        <p class="font-medium pb-2">City <span class="text-red-400">*</span></p>
+        <input [(ngModel)]="city"
+          class="w-full h-14 rounded-lg border border-[#324d67] bg-[#192633] px-4 text-white placeholder:text-[#92adc9] focus:border-primary focus:outline-none"
+          placeholder="Colombo 03" />
       </label>
 
       <label class="block">
-        <p class="font-medium pb-2">District</p>
-        <select class="w-full h-14 rounded-lg border border-[#324d67] bg-[#192633] px-4 text-white focus:border-primary focus:ring-0">
+        <p class="font-medium pb-2">District <span class="text-red-400">*</span></p>
+        <select [(ngModel)]="district"
+          class="w-full h-14 rounded-lg border border-[#324d67] bg-[#192633] px-4 text-white focus:border-primary focus:outline-none">
           <option value="">Select District</option>
-          <option>Colombo</option>
-          <option>Kandy</option>
-          <option>Galle</option>
-          <option>Gampaha</option>
-          <option>Kalutara</option>
+          <option *ngFor="let d of districts" [value]="d">{{ d }}</option>
         </select>
       </label>
 
       <label class="block">
-        <p class="font-medium pb-2">NIC Number</p>
-        <input class="w-full h-14 rounded-lg border border-[#324d67] bg-[#192633] px-4 text-white placeholder:text-[#92adc9] focus:border-primary focus:ring-0" placeholder="901234567V or 199012345678" />
+        <p class="font-medium pb-2">NIC Number <span class="text-red-400">*</span></p>
+        <input [(ngModel)]="nicNumber"
+          class="w-full h-14 rounded-lg border border-[#324d67] bg-[#192633] px-4 text-white placeholder:text-[#92adc9] focus:border-primary focus:outline-none"
+          placeholder="901234567V or 199012345678" />
       </label>
     </div>
 
-    <div class="mt-8 rounded-xl p-5 bg-primary/10 border border-primary/30">
+    <!-- Selected plan summary -->
+    <div *ngIf="selectedPlan" class="mt-8 rounded-xl p-5 bg-primary/10 border border-primary/30">
       <div class="flex justify-between items-start">
         <div>
           <p class="text-primary text-xs font-bold uppercase tracking-wider">Plan Selected</p>
-          <h4 class="text-white text-xl font-bold">Comprehensive Life+</h4>
+          <h4 class="text-white text-xl font-bold">{{ selectedPlan.name }}</h4>
+          <p class="text-[#92adc9] text-sm mt-1">Rs. {{ selectedPlan.premiumLkrPerMonth | number:'1.0-0' }} / month</p>
         </div>
         <span class="material-symbols-outlined text-primary">verified</span>
       </div>
@@ -54,7 +59,9 @@
   </div>
 
   <div class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md p-4 bg-background-dark/80 backdrop-blur border-t border-gray-800">
-    <button class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-xl" routerLink="/proposal/summary">
+    <button (click)="generate()"
+      [disabled]="!addressLine1 || !city || !district || !nicNumber"
+      class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-xl disabled:opacity-50">
       Generate Final Proposal
       <span class="material-symbols-outlined align-middle ml-2 text-sm">description</span>
     </button>
