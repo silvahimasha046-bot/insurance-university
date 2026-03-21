@@ -41,6 +41,7 @@ public class AuthController {
     /** POST /api/auth/register — register a new customer user */
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody Map<String, String> body) {
+
         String name     = body.get("name");
         String email    = body.get("email");
         String password = body.get("password");
