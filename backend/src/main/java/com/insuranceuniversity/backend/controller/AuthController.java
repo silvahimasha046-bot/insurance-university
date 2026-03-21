@@ -5,6 +5,8 @@ import com.insuranceuniversity.backend.entity.UserEntity;
 import com.insuranceuniversity.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -92,5 +94,26 @@ public class AuthController {
             return ResponseEntity.ok(Map.of("accessToken", token));
         }
         return ResponseEntity.status(401).body(Map.of("error", "Invalid credentials"));
+    }
+
+    /** GET /api/auth/me — return the authenticated customer's profile */
+    @GetMapping("/me")
+    public ResponseEntity<?> me() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()
+                || "anonymousUser".equals(authentication.getPrincipal())) {
+            return ResponseEntity.status(401).body(Map.of("error", "Not authenticated"));
+        }
+        String email = authentication.getName();
+        Optional<UserEntity> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(404).body(Map.of("error", "User not found"));
+        }
+        UserEntity user = userOpt.get();
+        return ResponseEntity.ok(Map.of(
+                "name", user.getName(),
+                "email", user.getEmail(),
+                "role", user.getRole()
+        ));
     }
 }

@@ -2,6 +2,7 @@ import { Routes } from "@angular/router";
 import { HomeComponent } from "./features/home/home.component";
 import { wizardProgressGuard } from "./core/guards/wizard-progress.guard";
 import { adminGuard } from "./core/guards/admin.guard";
+import { customerAuthGuard } from "./core/guards/customer-auth.guard";
 
 export const routes: Routes = [
   { path: "", component: HomeComponent },
@@ -15,6 +16,15 @@ export const routes: Routes = [
     path: "register",
     loadComponent: () =>
       import("./features/auth/register/register.component").then((m) => m.RegisterComponent),
+  },
+
+  {
+    path: "customer/dashboard",
+    canMatch: [customerAuthGuard],
+    loadComponent: () =>
+      import("./features/customer/dashboard/customer-dashboard.component").then(
+        (m) => m.CustomerDashboardComponent
+      ),
   },
 
   {

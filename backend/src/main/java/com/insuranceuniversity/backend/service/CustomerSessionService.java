@@ -63,10 +63,13 @@ public class CustomerSessionService {
     }
 
     /** Create a new customer session and return its id. */
-    public String createSession() {
+    public String createSession(String userEmail) {
         CustomerSessionEntity entity = new CustomerSessionEntity();
         entity.setId(UUID.randomUUID().toString());
         entity.setStatus("ACTIVE");
+        if (userEmail != null && !userEmail.isBlank()) {
+            entity.setUserEmail(userEmail);
+        }
         entity.setCreatedAt(LocalDateTime.now());
         entity.setUpdatedAt(LocalDateTime.now());
         sessionRepo.save(entity);
@@ -74,10 +77,12 @@ public class CustomerSessionService {
         return entity.getId();
     }
 
-    /** List recent sessions (for authenticated user view). */
-    public List<Map<String, Object>> listSessions() {
-        return sessionRepo.findAll().stream()
-                .sorted(java.util.Comparator.comparing(CustomerSessionEntity::getCreatedAt).reversed())
+    /** List recent sessions for a given user (newest first, up to 50). */
+    public List<Map<String, Object>> listSessions(String userEmail) {
+        if (userEmail == null || userEmail.isBlank()) {
+            return List.of();
+        }
+        return sessionRepo.findByUserEmailOrderByCreatedAtDesc(userEmail).stream()
                 .limit(50)
                 .map(s -> {
                     Map<String, Object> m = new HashMap<>();
