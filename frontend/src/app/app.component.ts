@@ -43,11 +43,11 @@ export class AppComponent {
 
   private adminRoute$ = this.router.events.pipe(
     filter(e => e instanceof NavigationEnd),
-    map(() => this.router.url.startsWith('/admin')),
+    map(() => this.router.url.startsWith('/admin') || this.router.url.startsWith('/customer/dashboard')),
   );
 
   isAdminRoute = toSignal(this.adminRoute$, {
-    initialValue: this.router.url.startsWith('/admin'),
+    initialValue: this.router.url.startsWith('/admin') || this.router.url.startsWith('/customer/dashboard'),
   });
 }
 

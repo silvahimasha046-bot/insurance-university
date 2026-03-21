@@ -12,6 +12,10 @@ public class CustomerSessionEntity {
 
     private String status;
 
+    /** Email of the authenticated user who created this session; null for anonymous sessions. */
+    @Column(nullable = true)
+    private String userEmail;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -20,6 +24,9 @@ public class CustomerSessionEntity {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getUserEmail() { return userEmail; }
+    public void setUserEmail(String userEmail) { this.userEmail = userEmail; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
