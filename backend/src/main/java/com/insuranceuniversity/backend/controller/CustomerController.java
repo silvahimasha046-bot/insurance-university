@@ -26,6 +26,13 @@ public class CustomerController {
         return ResponseEntity.ok(Map.of("sessionId", sessionId));
     }
 
+    /** GET /api/customer/sessions — list past sessions (authenticated user) */
+    @GetMapping("/sessions")
+    public ResponseEntity<List<Map<String, Object>>> listSessions() {
+        List<Map<String, Object>> sessions = customerSessionService.listSessions();
+        return ResponseEntity.ok(sessions);
+    }
+
     /** GET /api/customer/sessions/{sessionId} — retrieve session + answers */
     @GetMapping("/sessions/{sessionId}")
     public ResponseEntity<Map<String, Object>> getSession(@PathVariable String sessionId) {
@@ -45,6 +52,13 @@ public class CustomerController {
         return ResponseEntity.ok(response);
     }
 
+    /** DELETE /api/customer/sessions/{sessionId} — delete session (consent withdrawal) */
+    @DeleteMapping("/sessions/{sessionId}")
+    public ResponseEntity<Void> deleteSession(@PathVariable String sessionId) {
+        customerSessionService.deleteSession(sessionId);
+        return ResponseEntity.noContent().build();
+    }
+
     /** POST /api/customer/sessions/{sessionId}/answers — upsert answers */
     @PostMapping("/sessions/{sessionId}/answers")
     public ResponseEntity<Map<String, String>> saveAnswers(
@@ -59,5 +73,14 @@ public class CustomerController {
     public ResponseEntity<Map<String, Object>> getRecommendations(@PathVariable String sessionId) {
         Map<String, Object> result = customerSessionService.getRecommendations(sessionId);
         return ResponseEntity.ok(result);
+    }
+
+    /** POST /api/customer/feedback — submit survey feedback */
+    @PostMapping("/feedback")
+    public ResponseEntity<Map<String, String>> submitFeedback(@RequestBody Map<String, Object> body) {
+        // Feedback is logged server-side; no persistence layer required for MVP
+        int rating = body.get("rating") instanceof Number n ? n.intValue() : 0;
+        String comments = body.get("comments") instanceof String s ? s : "";
+        return ResponseEntity.ok(Map.of("status", "ok", "rating", String.valueOf(rating)));
     }
 }

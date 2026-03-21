@@ -118,6 +118,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: "products",
+        loadComponent: () =>
+          import("./features/admin/products/admin-products.component").then(
+            (m) => m.AdminProductsComponent
+          ),
+      },
+      {
         path: "rules",
         loadComponent: () =>
           import("./features/admin/rules/admin-rules.component").then(

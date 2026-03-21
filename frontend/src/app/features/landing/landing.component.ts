@@ -1,6 +1,8 @@
-import { Component, HostListener } from "@angular/core";
+import { Component, HostListener, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { RouterModule } from "@angular/router";
+
+const LANG_KEY = "insurance_ui_language";
 
 @Component({
   selector: "app-landing",
@@ -9,9 +11,17 @@ import { RouterModule } from "@angular/router";
   templateUrl: "./landing.component.html",
   styleUrl: "./landing.component.scss",
 })
-export class LandingComponent {
+export class LandingComponent implements OnInit {
   langMenuOpen = false;
   selectedLangLabel = "EN";
+  isLoggedIn = false;
+
+  ngOnInit(): void {
+    this.isLoggedIn = !!localStorage.getItem("insurance_auth_token");
+    const saved = localStorage.getItem(LANG_KEY);
+    if (saved === "si") this.selectedLangLabel = "සිං";
+    else this.selectedLangLabel = "EN";
+  }
 
   toggleLang(): void {
     this.langMenuOpen = !this.langMenuOpen;
@@ -20,7 +30,13 @@ export class LandingComponent {
   setLanguage(code: "en" | "si", label: string): void {
     this.selectedLangLabel = label;
     this.langMenuOpen = false;
-    console.log("Language selected:", code);
+    localStorage.setItem(LANG_KEY, code);
+  }
+
+  logout(): void {
+    localStorage.removeItem("insurance_auth_token");
+    localStorage.removeItem("insurance_customer_session_id");
+    this.isLoggedIn = false;
   }
 
   @HostListener("document:click", ["$event"])

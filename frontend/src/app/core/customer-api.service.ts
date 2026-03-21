@@ -8,8 +8,11 @@ const SESSION_KEY = "insurance_customer_session_id";
 export interface RankedProduct {
   code: string;
   name: string;
+  policyType: string;
   score: number;
   monthlyPremiumEstimate: number;
+  affordabilityScore: number;
+  lapseProbability: number;
   reasons: string[];
 }
 
@@ -51,5 +54,15 @@ export class CustomerApiService {
       `${BASE_URL}/customer/sessions/${sessionId}/recommendations`,
       {}
     );
+  }
+
+  /** Delete a session (consent withdrawal). */
+  deleteSession(sessionId: string): Observable<void> {
+    return this.http.delete<void>(`${BASE_URL}/customer/sessions/${sessionId}`);
+  }
+
+  /** List past sessions for the authenticated user. */
+  listSessions(): Observable<any[]> {
+    return this.http.get<any[]>(`${BASE_URL}/customer/sessions`);
   }
 }
