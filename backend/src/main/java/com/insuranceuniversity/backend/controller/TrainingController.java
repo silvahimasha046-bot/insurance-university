@@ -4,17 +4,18 @@ import com.insuranceuniversity.backend.entity.DatasetMetaEntity;
 import com.insuranceuniversity.backend.entity.ModelVersionEntity;
 import com.insuranceuniversity.backend.repository.DatasetMetaRepository;
 import com.insuranceuniversity.backend.repository.ModelVersionRepository;
+import com.insuranceuniversity.backend.service.AiEngineClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -23,13 +24,16 @@ public class TrainingController {
 
     private final DatasetMetaRepository datasetRepo;
     private final ModelVersionRepository modelRepo;
+    private final AiEngineClient aiEngineClient;
 
     @Value("${app.uploadsDir}")
     private String uploadsDir;
 
-    public TrainingController(DatasetMetaRepository datasetRepo, ModelVersionRepository modelRepo) {
+    public TrainingController(DatasetMetaRepository datasetRepo, ModelVersionRepository modelRepo,
+                              AiEngineClient aiEngineClient) {
         this.datasetRepo = datasetRepo;
         this.modelRepo = modelRepo;
+        this.aiEngineClient = aiEngineClient;
     }
 
     @PostMapping("/datasets")
@@ -46,7 +50,18 @@ public class TrainingController {
         meta.setStoredPath(dest.toString());
         meta.setFileSize(file.getSize());
 
-        return ResponseEntity.ok(datasetRepo.save(meta));
+        DatasetMetaEntity saved = datasetRepo.save(meta);
+
+        // Forward to AI engine for training
+        Map<String, Object> trainResult = null;
+        try {
+            trainResult = aiEngineClient.train(file);
+        } catch (Exception e) {
+            // Training is best-effort; dataset is still saved
+        }
+
+        return ResponseEntity.ok(Map.of("dataset", saved, "trainResult",
+                trainResult != null ? trainResult : Map.of("message", "AI engine training skipped")));
     }
 
     @GetMapping("/datasets")

@@ -5,9 +5,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -28,11 +34,6 @@ public class AiEngineClient {
 
     /**
      * Calls the AI engine POST /score endpoint.
-     *
-     * @param sessionId  customer session id
-     * @param features   map of feature key→value (age, income, smoker, …)
-     * @param products   list of product maps with code, name, basePremium, tags
-     * @return raw response map parsed from JSON
      */
     @SuppressWarnings("unchecked")
     public Map<String, Object> score(String sessionId, Map<String, Object> features, List<Map<String, Object>> products) {
@@ -58,6 +59,41 @@ public class AiEngineClient {
         } catch (Exception e) {
             log.error("AI engine call failed for session={}", sessionId, e);
             throw new RuntimeException("AI engine unavailable: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Calls the AI engine POST /train endpoint with a CSV file.
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> train(MultipartFile file) throws IOException {
+        byte[] bytes = file.getBytes();
+        String filename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "dataset.csv";
+
+        ByteArrayResource resource = new ByteArrayResource(bytes) {
+            @Override
+            public String getFilename() { return filename; }
+        };
+
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("file", resource);
+
+        try {
+            log.info("Calling AI engine /train with file={}", filename);
+            String responseBody = restClient.post()
+                    .uri("/train")
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .body(body)
+                    .retrieve()
+                    .body(String.class);
+
+            return objectMapper.readValue(responseBody, Map.class);
+        } catch (JsonProcessingException e) {
+            log.error("Failed to parse AI engine train response", e);
+            throw new RuntimeException("AI engine train response parsing failed", e);
+        } catch (Exception e) {
+            log.error("AI engine /train call failed", e);
+            throw new RuntimeException("AI engine train unavailable: " + e.getMessage(), e);
         }
     }
 }

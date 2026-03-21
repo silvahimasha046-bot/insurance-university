@@ -8,6 +8,12 @@ const API = 'http://localhost:8080/api/admin';
 export class AdminApiService {
   constructor(private http: HttpClient) {}
 
+  // Products
+  listProducts(): Observable<any[]> { return this.http.get<any[]>(`${API}/products`); }
+  createProduct(body: any): Observable<any> { return this.http.post(`${API}/products`, body); }
+  updateProduct(id: number, body: any): Observable<any> { return this.http.put(`${API}/products/${id}`, body); }
+  deleteProduct(id: number): Observable<any> { return this.http.delete(`${API}/products/${id}`); }
+
   // Rules
   listRules(): Observable<any[]> { return this.http.get<any[]>(`${API}/rules`); }
   createRule(body: any): Observable<any> { return this.http.post(`${API}/rules`, body); }

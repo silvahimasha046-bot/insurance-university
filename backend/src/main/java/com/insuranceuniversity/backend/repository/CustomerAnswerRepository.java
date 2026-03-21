@@ -8,4 +8,5 @@ import java.util.List;
 public interface CustomerAnswerRepository extends JpaRepository<CustomerAnswerEntity, Long> {
     List<CustomerAnswerEntity> findBySessionId(String sessionId);
     void deleteBySessionIdAndKey(String sessionId, String key);
+    void deleteBySessionId(String sessionId);
 }

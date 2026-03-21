@@ -9,20 +9,90 @@
   <div class="p-4 max-w-xl mx-auto text-gray-900 dark:text-white">
     <h2 class="text-[28px] font-extrabold">What-If Simulator</h2>
     <p class="text-gray-500 dark:text-[#92adc9] text-sm mt-1">
-      Adjust parameters to see premium changes.
+      Adjust parameters to see how your premium changes.
     </p>
 
+    <!-- Live premium display -->
     <div class="mt-6 rounded-2xl p-8 bg-primary text-white text-center shadow-xl shadow-primary/20">
       <p class="text-white/80 text-sm font-medium uppercase tracking-widest mb-2">Estimated Monthly Premium</p>
-      <h3 class="text-5xl font-extrabold">Rs. 12,400</h3>
+      <h3 class="text-5xl font-extrabold">Rs. {{ estimatedPremium | number:'1.0-0' }}</h3>
       <p class="text-white/90 text-xl font-medium mt-1">per month</p>
+    </div>
+
+    <!-- Coverage Multiplier Slider -->
+    <div class="mt-8">
+      <div class="flex justify-between items-center mb-3">
+        <p class="font-semibold">Coverage Multiplier</p>
+        <span class="text-primary font-bold text-lg">{{ coverageLabel }}</span>
+      </div>
+      <input type="range" [(ngModel)]="coverageMultiplier"
+        min="0.5" max="3.0" step="0.1"
+        class="w-full h-2 rounded-lg appearance-none cursor-pointer bg-gray-200 dark:bg-gray-700 accent-primary" />
+      <div class="flex justify-between text-xs text-gray-400 dark:text-[#92adc9] mt-1">
+        <span>0.5×</span><span>1.0×</span><span>1.5×</span><span>2.0×</span><span>2.5×</span><span>3.0×</span>
+      </div>
+    </div>
+
+    <!-- Rider checkboxes -->
+    <div class="mt-6 space-y-3">
+      <p class="font-semibold mb-2">Optional Riders</p>
+
+      <label class="flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-colors"
+        [class.border-primary]="addCriticalIllness"
+        [class.bg-primary/5]="addCriticalIllness"
+        [class.border-gray-200]="!addCriticalIllness"
+        [class.dark:border-gray-700]="!addCriticalIllness">
+        <div>
+          <p class="font-semibold">Critical Illness Rider</p>
+          <p class="text-gray-500 dark:text-[#92adc9] text-xs">+15% of base premium</p>
+        </div>
+        <input type="checkbox" [(ngModel)]="addCriticalIllness"
+          class="w-5 h-5 rounded accent-primary cursor-pointer" />
+      </label>
+
+      <label class="flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-colors"
+        [class.border-primary]="addAccidentRider"
+        [class.bg-primary/5]="addAccidentRider"
+        [class.border-gray-200]="!addAccidentRider"
+        [class.dark:border-gray-700]="!addAccidentRider">
+        <div>
+          <p class="font-semibold">Accident Benefit Rider</p>
+          <p class="text-gray-500 dark:text-[#92adc9] text-xs">+8% of base premium</p>
+        </div>
+        <input type="checkbox" [(ngModel)]="addAccidentRider"
+          class="w-5 h-5 rounded accent-primary cursor-pointer" />
+      </label>
+    </div>
+
+    <!-- Premium breakdown -->
+    <div class="mt-6 rounded-xl border border-gray-200 dark:border-gray-800 p-4 space-y-2 text-sm">
+      <div class="flex justify-between">
+        <span class="text-gray-500 dark:text-[#92adc9]">Base Premium</span>
+        <span class="font-semibold">Rs. {{ basePremium | number:'1.0-0' }}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-gray-500 dark:text-[#92adc9]">Coverage Multiplier ({{ coverageLabel }})</span>
+        <span class="font-semibold">Rs. {{ (basePremium * coverageMultiplier) | number:'1.0-0' }}</span>
+      </div>
+      <div *ngIf="addCriticalIllness" class="flex justify-between text-primary">
+        <span>Critical Illness Rider (+15%)</span>
+        <span class="font-semibold">+ Rs. {{ (basePremium * 0.15) | number:'1.0-0' }}</span>
+      </div>
+      <div *ngIf="addAccidentRider" class="flex justify-between text-primary">
+        <span>Accident Rider (+8%)</span>
+        <span class="font-semibold">+ Rs. {{ (basePremium * 0.08) | number:'1.0-0' }}</span>
+      </div>
+      <div class="border-t border-gray-200 dark:border-gray-700 pt-2 flex justify-between font-bold">
+        <span>Total Monthly</span>
+        <span class="text-primary">Rs. {{ estimatedPremium | number:'1.0-0' }}</span>
+      </div>
     </div>
 
     <div class="mt-6 flex flex-col gap-3">
       <button class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-xl" routerLink="/proposal/upload">
         Apply with this Quote
       </button>
-      <button class="w-full border border-gray-200 dark:border-gray-800 font-bold py-4 rounded-xl" routerLink="/recommendations">
+      <button class="w-full border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white font-bold py-4 rounded-xl" routerLink="/recommendations">
         Save for Later
       </button>
     </div>
