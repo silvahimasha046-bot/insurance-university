@@ -2,6 +2,14 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { CustomerAuthService } from '../../../core/services/customer-auth.service';
+import { CustomerApiService } from '../../../core/customer-api.service';
+
+export interface CustomerSession {
+  sessionId: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 @Component({
   selector: 'app-customer-dashboard',
@@ -13,7 +21,14 @@ export class CustomerDashboardComponent implements OnInit {
   userName = '';
   userEmail = '';
 
-  constructor(private auth: CustomerAuthService) {}
+  sessions: CustomerSession[] = [];
+  sessionsLoading = true;
+  sessionsError = false;
+
+  constructor(
+    private auth: CustomerAuthService,
+    private customerApi: CustomerApiService,
+  ) {}
 
   ngOnInit(): void {
     this.userName = this.auth.getUserName();
@@ -31,6 +46,32 @@ export class CustomerDashboardComponent implements OnInit {
           }
         },
       });
+    }
+
+    this.loadSessions();
+  }
+
+  loadSessions(): void {
+    this.sessionsLoading = true;
+    this.sessionsError = false;
+    this.customerApi.listSessions().subscribe({
+      next: (data) => {
+        this.sessions = data as CustomerSession[];
+        this.sessionsLoading = false;
+      },
+      error: () => {
+        this.sessionsError = true;
+        this.sessionsLoading = false;
+      },
+    });
+  }
+
+  formatDate(iso: string): string {
+    if (!iso) return '—';
+    try {
+      return new Date(iso).toLocaleString();
+    } catch {
+      return iso;
     }
   }
 

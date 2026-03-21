@@ -4,6 +4,8 @@ import com.insuranceuniversity.backend.entity.CustomerAnswerEntity;
 import com.insuranceuniversity.backend.entity.CustomerSessionEntity;
 import com.insuranceuniversity.backend.service.CustomerSessionService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,14 +24,16 @@ public class CustomerController {
     /** POST /api/customer/sessions — create a new session */
     @PostMapping("/sessions")
     public ResponseEntity<Map<String, String>> createSession() {
-        String sessionId = customerSessionService.createSession();
+        String userEmail = getAuthenticatedEmail();
+        String sessionId = customerSessionService.createSession(userEmail);
         return ResponseEntity.ok(Map.of("sessionId", sessionId));
     }
 
     /** GET /api/customer/sessions — list past sessions (authenticated user) */
     @GetMapping("/sessions")
     public ResponseEntity<List<Map<String, Object>>> listSessions() {
-        List<Map<String, Object>> sessions = customerSessionService.listSessions();
+        String userEmail = getAuthenticatedEmail();
+        List<Map<String, Object>> sessions = customerSessionService.listSessions(userEmail);
         return ResponseEntity.ok(sessions);
     }
 
@@ -82,5 +86,14 @@ public class CustomerController {
         int rating = body.get("rating") instanceof Number n ? n.intValue() : 0;
         String comments = body.get("comments") instanceof String s ? s : "";
         return ResponseEntity.ok(Map.of("status", "ok", "rating", String.valueOf(rating)));
+    }
+
+    /** Returns the authenticated user's email, or null if unauthenticated. */
+    private String getAuthenticatedEmail() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+            return auth.getName();
+        }
+        return null;
     }
 }
