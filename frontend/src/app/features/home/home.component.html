@@ -1,0 +1,292 @@
+<!-- Home Page -->
+<div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+
+  <!-- Navigation -->
+  <nav class="sticky top-0 z-50 flex items-center bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md p-4 justify-between border-b border-gray-200 dark:border-gray-800">
+    <div class="flex items-center gap-2">
+      <div class="text-primary flex size-8 shrink-0 items-center justify-center bg-primary/10 rounded-lg">
+        <span class="material-symbols-outlined">shield_with_heart</span>
+      </div>
+      <h2 class="text-gray-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">InsureAI</h2>
+    </div>
+
+    <div class="flex items-center gap-4">
+      <div data-lang-dropdown class="relative">
+        <div class="flex items-center gap-1 cursor-pointer" (click)="toggleLang()">
+          <span class="material-symbols-outlined text-slate-500 dark:text-slate-400 text-sm">language</span>
+          <span class="text-xs font-bold uppercase text-slate-600 dark:text-slate-300">{{ selectedLangLabel }}</span>
+          <span class="material-symbols-outlined text-slate-400 text-sm">expand_more</span>
+        </div>
+        <div
+          class="absolute right-0 mt-2 w-32 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-50"
+          [class.hidden]="!langMenuOpen"
+        >
+          <button (click)="setLanguage('en','EN')" class="w-full text-left px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700">
+            English
+          </button>
+          <button (click)="setLanguage('si','සිං')" class="w-full text-left px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700">
+            සිංහල
+          </button>
+        </div>
+      </div>
+
+      <button
+        class="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-5 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-colors"
+        routerLink="/wizard/step-1"
+      >
+        <span class="material-symbols-outlined text-base mr-1">smart_toy</span>
+        <span>Start AI Advisor</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="@container">
+    <div class="@[480px]:p-4">
+      <div
+        class="flex min-h-[560px] flex-col gap-6 bg-cover bg-center bg-no-repeat @[480px]:gap-8 @[480px]:rounded-xl items-center justify-center p-6"
+        style='background-image: linear-gradient(rgba(16, 25, 34, 0.88) 0%, rgba(16, 25, 34, 0.96) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuD1ujulgvJg49aieGK5f5lsUdctEniE1QWLj_jvNLpn9kK6IqjoPkYFiliU87rUIMMMXlACBRLvpvR70hsH6Fs0zu22L4hheod2J7lrMrs_39gjvflT5W1vvEzQDqSApVwUiRgJsjDt1jRCtvPhKdDFzI125GXdWkaoPF-gTDyPwrq1Altn41Htn7yw6ae6TPXtuctjbi0AGB77wVltmAz4cGWhUOE0JRfzNRIedSZN4gZEBZhDv5ZYOyxeu8yeyNiFeAHfyBins-A");'
+      >
+        <div class="flex flex-col gap-4 text-center max-w-3xl">
+          <div class="inline-flex items-center justify-center gap-2 bg-primary/20 text-primary text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mx-auto">
+            <span class="material-symbols-outlined text-sm">auto_awesome</span>
+            AI-Powered Insurance Advisor
+          </div>
+          <h1 class="text-white text-4xl font-extrabold leading-tight tracking-[-0.033em] @[480px]:text-6xl">
+            Find the Perfect Insurance<br class="hidden @[480px]:block"> Policy — Instantly
+          </h1>
+          <p class="text-gray-300 text-base font-normal leading-relaxed @[480px]:text-xl max-w-xl mx-auto">
+            Our intelligent AI advisor analyses your needs, income, and health profile to recommend the best policy — in minutes, not days.
+          </p>
+        </div>
+
+        <div class="flex flex-col w-full gap-3 @[480px]:flex-row justify-center">
+          <button
+            class="flex min-w-[220px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-lg h-14 px-8 bg-primary text-white text-base font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-colors shadow-lg shadow-primary/30"
+            routerLink="/wizard/step-1"
+          >
+            <span class="material-symbols-outlined">smart_toy</span>
+            <span>Start Free AI Session</span>
+          </button>
+          <button
+            class="flex min-w-[180px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-lg h-14 px-8 bg-white/10 text-white text-base font-bold leading-normal tracking-[0.015em] hover:bg-white/20 transition-colors border border-white/20"
+            routerLink="/survey"
+          >
+            <span class="material-symbols-outlined">assignment</span>
+            <span>Quick Survey</span>
+          </button>
+        </div>
+
+        <p class="text-gray-400 text-xs">No account needed · Free to use · 100% unbiased</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Trust Badges -->
+  <div class="flex flex-wrap justify-center gap-6 px-4 py-6 border-b border-gray-200 dark:border-gray-800">
+    <div class="flex items-center gap-2 text-gray-600 dark:text-gray-400 text-sm">
+      <span class="material-symbols-outlined text-green-500 text-base">verified</span>
+      <span>Trusted by 10,000+ users</span>
+    </div>
+    <div class="flex items-center gap-2 text-gray-600 dark:text-gray-400 text-sm">
+      <span class="material-symbols-outlined text-blue-500 text-base">lock</span>
+      <span>Bank-grade encryption</span>
+    </div>
+    <div class="flex items-center gap-2 text-gray-600 dark:text-gray-400 text-sm">
+      <span class="material-symbols-outlined text-primary text-base">balance</span>
+      <span>Zero commission bias</span>
+    </div>
+    <div class="flex items-center gap-2 text-gray-600 dark:text-gray-400 text-sm">
+      <span class="material-symbols-outlined text-yellow-500 text-base">bolt</span>
+      <span>Results in under 5 minutes</span>
+    </div>
+  </div>
+
+  <!-- How It Works -->
+  <section class="px-4 py-12 @container">
+    <div class="text-center mb-10">
+      <h4 class="text-primary text-xs uppercase font-extrabold leading-normal tracking-[0.1em] mb-2">How It Works</h4>
+      <h2 class="text-gray-900 dark:text-white text-3xl font-bold leading-tight">Your AI Journey in 3 Simple Steps</h2>
+    </div>
+
+    <div class="grid grid-cols-1 @[768px]:grid-cols-3 gap-6 max-w-4xl mx-auto">
+      <!-- Step 1 -->
+      <div class="relative flex flex-col items-center text-center gap-4 p-6 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-background-dark shadow-sm">
+        <div class="flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <span class="material-symbols-outlined text-3xl">person_search</span>
+        </div>
+        <div class="absolute -top-3 -left-3 flex size-7 items-center justify-center rounded-full bg-primary text-white text-sm font-bold">1</div>
+        <div>
+          <h3 class="text-gray-900 dark:text-white text-lg font-bold mb-1">Tell Us About You</h3>
+          <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">Share your coverage needs, monthly income, and health profile with our AI assistant.</p>
+        </div>
+        <div class="mt-auto">
+          <span class="inline-block bg-primary/10 text-primary text-xs font-semibold px-3 py-1 rounded-full">Step 1 · Needs Assessment</span>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="relative flex flex-col items-center text-center gap-4 p-6 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-background-dark shadow-sm">
+        <div class="flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <span class="material-symbols-outlined text-3xl">smart_toy</span>
+        </div>
+        <div class="absolute -top-3 -left-3 flex size-7 items-center justify-center rounded-full bg-primary text-white text-sm font-bold">2</div>
+        <div>
+          <h3 class="text-gray-900 dark:text-white text-lg font-bold mb-1">AI Analyses &amp; Recommends</h3>
+          <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">Our engine evaluates hundreds of policies and ranks them by suitability, price, and affordability.</p>
+        </div>
+        <div class="mt-auto">
+          <span class="inline-block bg-primary/10 text-primary text-xs font-semibold px-3 py-1 rounded-full">Step 2 · AI Matching</span>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="relative flex flex-col items-center text-center gap-4 p-6 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-background-dark shadow-sm">
+        <div class="flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <span class="material-symbols-outlined text-3xl">fact_check</span>
+        </div>
+        <div class="absolute -top-3 -left-3 flex size-7 items-center justify-center rounded-full bg-primary text-white text-sm font-bold">3</div>
+        <div>
+          <h3 class="text-gray-900 dark:text-white text-lg font-bold mb-1">Choose &amp; Apply</h3>
+          <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">Compare top plans, simulate premiums, and submit your proposal documents — all in one place.</p>
+        </div>
+        <div class="mt-auto">
+          <span class="inline-block bg-primary/10 text-primary text-xs font-semibold px-3 py-1 rounded-full">Step 3 · Apply Online</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="px-4 py-12 bg-gray-50 dark:bg-background-dark/50 @container">
+    <div class="text-center mb-10">
+      <h4 class="text-primary text-xs uppercase font-extrabold leading-normal tracking-[0.1em] mb-2">Why Choose InsureAI</h4>
+      <h2 class="text-gray-900 dark:text-white text-3xl font-bold leading-tight">Secure &amp; Private by Design</h2>
+      <p class="text-gray-600 dark:text-gray-400 text-sm mt-2 max-w-md mx-auto">Your personal data is encrypted and processed securely. We prioritize your data sovereignty.</p>
+    </div>
+
+    <div class="grid grid-cols-1 @[480px]:grid-cols-2 @[768px]:grid-cols-3 gap-5 max-w-5xl mx-auto">
+      <div class="flex flex-col gap-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-background-dark p-5 shadow-sm">
+        <div class="text-primary flex size-10 items-center justify-center bg-primary/10 rounded-lg">
+          <span class="material-symbols-outlined">lock</span>
+        </div>
+        <h3 class="text-gray-900 dark:text-white text-base font-bold">Privacy First</h3>
+        <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">Bank-grade encryption for all data storage and transmission.</p>
+      </div>
+
+      <div class="flex flex-col gap-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-background-dark p-5 shadow-sm">
+        <div class="text-primary flex size-10 items-center justify-center bg-primary/10 rounded-lg">
+          <span class="material-symbols-outlined">balance</span>
+        </div>
+        <h3 class="text-gray-900 dark:text-white text-base font-bold">Unbiased Results</h3>
+        <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">Zero commission conflict — just pure AI-driven analytics for your benefit.</p>
+      </div>
+
+      <div class="flex flex-col gap-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-background-dark p-5 shadow-sm">
+        <div class="text-primary flex size-10 items-center justify-center bg-primary/10 rounded-lg">
+          <span class="material-symbols-outlined">bolt</span>
+        </div>
+        <h3 class="text-gray-900 dark:text-white text-base font-bold">Instant Clarity</h3>
+        <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">Analyse hundreds of insurance policies in seconds with AI precision.</p>
+      </div>
+
+      <div class="flex flex-col gap-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-background-dark p-5 shadow-sm">
+        <div class="text-primary flex size-10 items-center justify-center bg-primary/10 rounded-lg">
+          <span class="material-symbols-outlined">compare</span>
+        </div>
+        <h3 class="text-gray-900 dark:text-white text-base font-bold">Side-by-Side Compare</h3>
+        <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">Compare multiple plans simultaneously to make the most informed decision.</p>
+      </div>
+
+      <div class="flex flex-col gap-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-background-dark p-5 shadow-sm">
+        <div class="text-primary flex size-10 items-center justify-center bg-primary/10 rounded-lg">
+          <span class="material-symbols-outlined">calculate</span>
+        </div>
+        <h3 class="text-gray-900 dark:text-white text-base font-bold">Premium Simulator</h3>
+        <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">Simulate premiums and adjust coverage before committing to any plan.</p>
+      </div>
+
+      <div class="flex flex-col gap-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-background-dark p-5 shadow-sm">
+        <div class="text-primary flex size-10 items-center justify-center bg-primary/10 rounded-lg">
+          <span class="material-symbols-outlined">upload_file</span>
+        </div>
+        <h3 class="text-gray-900 dark:text-white text-base font-bold">Easy Document Upload</h3>
+        <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">Upload NIC, medical records, and income documents securely in one step.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Insurance Types -->
+  <section class="px-4 py-12 @container">
+    <div class="text-center mb-10">
+      <h4 class="text-primary text-xs uppercase font-extrabold leading-normal tracking-[0.1em] mb-2">Coverage Options</h4>
+      <h2 class="text-gray-900 dark:text-white text-3xl font-bold leading-tight">Insurance Plans We Advise On</h2>
+    </div>
+
+    <div class="flex flex-wrap justify-center gap-3 max-w-3xl mx-auto">
+      <span class="flex items-center gap-1.5 bg-primary/10 text-primary text-sm font-semibold px-4 py-2 rounded-full">
+        <span class="material-symbols-outlined text-sm">favorite</span> Life Insurance
+      </span>
+      <span class="flex items-center gap-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm font-semibold px-4 py-2 rounded-full">
+        <span class="material-symbols-outlined text-sm">health_and_safety</span> Health Insurance
+      </span>
+      <span class="flex items-center gap-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm font-semibold px-4 py-2 rounded-full">
+        <span class="material-symbols-outlined text-sm">family_restroom</span> Family Plans
+      </span>
+      <span class="flex items-center gap-1.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 text-sm font-semibold px-4 py-2 rounded-full">
+        <span class="material-symbols-outlined text-sm">emergency</span> Critical Illness
+      </span>
+      <span class="flex items-center gap-1.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-sm font-semibold px-4 py-2 rounded-full">
+        <span class="material-symbols-outlined text-sm">local_hospital</span> Medical
+      </span>
+      <span class="flex items-center gap-1.5 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 text-sm font-semibold px-4 py-2 rounded-full">
+        <span class="material-symbols-outlined text-sm">savings</span> Endowment
+      </span>
+      <span class="flex items-center gap-1.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 text-sm font-semibold px-4 py-2 rounded-full">
+        <span class="material-symbols-outlined text-sm">car_crash</span> Accident Cover
+      </span>
+      <span class="flex items-center gap-1.5 bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 text-sm font-semibold px-4 py-2 rounded-full">
+        <span class="material-symbols-outlined text-sm">elderly</span> Retirement Plans
+      </span>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="@container bg-primary/5 dark:bg-primary/10 my-4">
+    <div class="flex flex-col justify-center gap-6 px-6 py-16 @[480px]:gap-8 @[480px]:px-10 @[480px]:py-24 text-center">
+      <div class="flex flex-col gap-3 max-w-2xl mx-auto">
+        <h2 class="text-gray-900 dark:text-white tracking-tight text-3xl font-bold leading-tight @[480px]:text-4xl">
+          Ready to find your perfect policy?
+        </h2>
+        <p class="text-gray-600 dark:text-gray-400 text-base font-normal leading-normal">
+          Start your AI-guided insurance journey now. No account needed — completely free.
+        </p>
+      </div>
+
+      <div class="flex flex-col @[480px]:flex-row justify-center gap-4">
+        <button
+          class="flex min-w-[240px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-lg h-14 px-8 bg-primary text-white text-base font-bold leading-normal tracking-[0.015em] hover:scale-[1.02] transition-transform shadow-lg shadow-primary/25"
+          routerLink="/wizard/step-1"
+        >
+          <span class="material-symbols-outlined">smart_toy</span>
+          <span>Get Started Now — It's Free</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="mt-auto p-8 border-t border-gray-200 dark:border-gray-800">
+    <div class="flex flex-col @[480px]:flex-row items-center justify-between gap-4 max-w-4xl mx-auto">
+      <div class="flex items-center gap-2">
+        <div class="text-primary flex size-6 shrink-0 items-center justify-center bg-primary/10 rounded-md">
+          <span class="material-symbols-outlined text-sm">shield_with_heart</span>
+        </div>
+        <span class="text-gray-700 dark:text-gray-300 text-sm font-bold">InsureAI</span>
+      </div>
+      <p class="text-gray-500 text-xs text-center">© 2024 InsureAI. All rights reserved. Powered by AI for smarter insurance decisions.</p>
+      <a routerLink="/admin/login" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xs transition-colors">Admin</a>
+    </div>
+  </footer>
+
+</div>
