@@ -16,18 +16,44 @@ export interface WizardState {
 
   step1?: {
     needsText?: string;
+    isPep?: boolean;
+    hasCriminalHistory?: boolean;
+    educationLevel?: "Postgrad" | "Undergrad" | "College" | "HighSchool" | "Elementary";
+    occupation?: string;
+    occupationHazardLevel?: number;
   };
 
   step2?: {
     monthlyIncomeLkr?: number;
+    monthlyExpensesLkr?: number;
+    netWorthLkr?: number;
+    liquidNetWorthLkr?: number;
+    targetPremiumRange?: string;
+    premiumPaymentYears?: string;
     loansText?: string;
     recommendedCoverageLkr?: number;
+    memberCount?: number;
+    childrenAges?: string;
+    protectionPurpose?: "SurvivorIncome" | "EducationFunding" | "RetirementSupplement" | "EstateLiquidity";
+    prioritySafety?: number;
+    priorityFlexibility?: number;
+    priorityEquity?: number;
+    priorityCertainty?: number;
+    priorityPremiumLevel?: number;
   };
 
   step3?: {
     health?: "excellent" | "good" | "average" | "poor";
     tobaccoUse?: boolean;
     conditions?: string[];
+    heartDisease?: boolean;
+    cancer?: boolean;
+    stroke?: boolean;
+    kidneyDisorder?: boolean;
+    hospitalization5Yrs?: boolean;
+    familyHistory?: boolean;
+    hazardousPursuits?: boolean;
+    flyingActivity?: boolean;
   };
 
   selectedPlan?: {
@@ -35,6 +61,11 @@ export interface WizardState {
     name: string;
     premiumLkrPerMonth: number;
     matchPercent: number;
+    eligibilityDecision?: string;
+    predictedCoverage?: number;
+    policyType?: string;
+    riderExclusions?: string[];
+    reasons?: string[];
   };
 
   documents?: {

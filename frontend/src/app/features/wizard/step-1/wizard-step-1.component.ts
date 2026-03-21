@@ -15,6 +15,12 @@ const CONSENT_KEY = "insurance_privacy_consent_v1";
 })
 export class WizardStep1Component implements OnInit {
   needsText = "";
+  isPep = false;
+  hasCriminalHistory = false;
+  educationLevel: "Postgrad" | "Undergrad" | "College" | "HighSchool" | "Elementary" = "Undergrad";
+  occupation = "";
+  occupationHazardLevel = 1;
+
   showConsentModal = false;
   isLoggedIn = false;
 
@@ -25,16 +31,19 @@ export class WizardStep1Component implements OnInit {
   ) {
     const s = this.wizard.snapshot.step1;
     if (typeof s?.needsText === "string") this.needsText = s.needsText;
+    if (typeof s?.isPep === "boolean") this.isPep = s.isPep;
+    if (typeof s?.hasCriminalHistory === "boolean") this.hasCriminalHistory = s.hasCriminalHistory;
+    if (s?.educationLevel) this.educationLevel = s.educationLevel;
+    if (typeof s?.occupation === "string") this.occupation = s.occupation;
+    if (typeof s?.occupationHazardLevel === "number") this.occupationHazardLevel = s.occupationHazardLevel;
   }
 
   ngOnInit(): void {
     this.isLoggedIn = !!localStorage.getItem("insurance_auth_token");
-    // Show consent modal if not yet accepted
     if (!localStorage.getItem(CONSENT_KEY)) {
       this.showConsentModal = true;
     }
 
-    // Create a new session when the wizard starts (if one doesn't exist yet)
     if (!this.customerApi.getStoredSessionId()) {
       this.customerApi.createSession().subscribe({
         next: (res) => this.customerApi.storeSessionId(res.sessionId),
@@ -56,11 +65,10 @@ export class WizardStep1Component implements OnInit {
     localStorage.removeItem(CONSENT_KEY);
     const sessionId = this.customerApi.getStoredSessionId();
     if (sessionId) {
-      // Delete session from backend, best effort
       this.customerApi.deleteSession(sessionId).subscribe({
-          next: () => {},
-          error: (err) => console.warn("Could not delete session from backend", err),
-        });
+        next: () => {},
+        error: (err) => console.warn("Could not delete session from backend", err),
+      });
       localStorage.removeItem("insurance_customer_session_id");
     }
     this.wizard.clear();
@@ -68,16 +76,32 @@ export class WizardStep1Component implements OnInit {
   }
 
   persist(): void {
-    this.wizard.updateStep1({ needsText: this.needsText });
+    this.wizard.updateStep1({
+      needsText: this.needsText,
+      isPep: this.isPep,
+      hasCriminalHistory: this.hasCriminalHistory,
+      educationLevel: this.educationLevel,
+      occupation: this.occupation,
+      occupationHazardLevel: this.occupationHazardLevel,
+    });
   }
 
   next(): void {
     this.persist();
     const sessionId = this.customerApi.getStoredSessionId();
-    if (sessionId && this.needsText) {
-      this.customerApi.submitAnswers(sessionId, { needsText: this.needsText }).subscribe({
-        error: (err) => console.warn("Could not save step-1 answers", err),
-      });
+    if (sessionId) {
+      this.customerApi
+        .submitAnswers(sessionId, {
+          needsText: this.needsText,
+          isPep: this.isPep,
+          hasCriminalHistory: this.hasCriminalHistory,
+          educationLevel: this.educationLevel,
+          occupation: this.occupation,
+          occupationHazardLevel: this.occupationHazardLevel,
+        })
+        .subscribe({
+          error: (err) => console.warn("Could not save step-1 answers", err),
+        });
     }
     this.router.navigateByUrl("/wizard/step-2");
   }
