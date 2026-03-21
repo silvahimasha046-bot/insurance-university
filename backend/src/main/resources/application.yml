@@ -15,6 +15,14 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
 
+logging:
+  config: classpath:log4j2.xml
+  level:
+    com.insuranceuniversity: DEBUG
+    com.insuranceuniversity.backend.filter: DEBUG
+    org.springframework.web: INFO
+    org.springframework.security: INFO
+
 app:
   uploadsDir: "./uploads"
   aiEngineUrl: "${AI_ENGINE_URL:http://localhost:8000}"

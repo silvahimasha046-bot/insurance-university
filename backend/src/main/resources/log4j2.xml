@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN" monitorInterval="30">
+
+  <Properties>
+    <Property name="LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</Property>
+    <Property name="LOG_DIR">logs</Property>
+  </Properties>
+
+  <Appenders>
+
+    <!-- Console appender -->
+    <Console name="ConsoleAppender" target="SYSTEM_OUT">
+      <PatternLayout pattern="${LOG_PATTERN}"/>
+    </Console>
+
+    <!-- Rolling file appender for application logs -->
+    <RollingFile name="FileAppender"
+                 fileName="${LOG_DIR}/insurance-university.log"
+                 filePattern="${LOG_DIR}/insurance-university-%d{yyyy-MM-dd}-%i.log.gz">
+      <PatternLayout pattern="${LOG_PATTERN}"/>
+      <Policies>
+        <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+        <SizeBasedTriggeringPolicy size="10MB"/>
+      </Policies>
+      <DefaultRolloverStrategy max="30"/>
+    </RollingFile>
+
+    <!-- Dedicated rolling file for HTTP request/response/error logs -->
+    <RollingFile name="HttpAppender"
+                 fileName="${LOG_DIR}/http-access.log"
+                 filePattern="${LOG_DIR}/http-access-%d{yyyy-MM-dd}-%i.log.gz">
+      <PatternLayout pattern="${LOG_PATTERN}"/>
+      <Policies>
+        <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+        <SizeBasedTriggeringPolicy size="10MB"/>
+      </Policies>
+      <DefaultRolloverStrategy max="30"/>
+    </RollingFile>
+
+  </Appenders>
+
+  <Loggers>
+
+    <!-- HTTP request/response/error logger — console + dedicated file -->
+    <Logger name="com.insuranceuniversity.backend.filter.RequestResponseLoggingFilter"
+            level="DEBUG" additivity="false">
+      <AppenderRef ref="ConsoleAppender"/>
+      <AppenderRef ref="HttpAppender"/>
+    </Logger>
+
+    <!-- Application root -->
+    <Logger name="com.insuranceuniversity" level="DEBUG" additivity="false">
+      <AppenderRef ref="ConsoleAppender"/>
+      <AppenderRef ref="FileAppender"/>
+    </Logger>
+
+    <!-- Spring framework — INFO to reduce noise -->
+    <Logger name="org.springframework" level="INFO" additivity="false">
+      <AppenderRef ref="ConsoleAppender"/>
+      <AppenderRef ref="FileAppender"/>
+    </Logger>
+
+    <!-- Hibernate SQL -->
+    <Logger name="org.hibernate.SQL" level="DEBUG" additivity="false">
+      <AppenderRef ref="ConsoleAppender"/>
+      <AppenderRef ref="FileAppender"/>
+    </Logger>
+
+    <Root level="INFO">
+      <AppenderRef ref="ConsoleAppender"/>
+      <AppenderRef ref="FileAppender"/>
+    </Root>
+
+  </Loggers>
+
+</Configuration>
