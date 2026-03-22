@@ -88,4 +88,18 @@ public class TrainingController {
             return ResponseEntity.ok(all.stream().filter(m -> m.getId().equals(id)).findFirst().orElse(model));
         }).orElse(ResponseEntity.notFound().build());
     }
+
+    @PostMapping("/datasets/{id}/retrain")
+    public ResponseEntity<?> retrainDataset(@PathVariable Long id) {
+        return datasetRepo.findById(id).map(dataset -> {
+            try {
+                Map<String, Object> trainResult = aiEngineClient.trainFromPath(
+                        dataset.getStoredPath(), dataset.getOriginalFilename());
+                return ResponseEntity.ok(Map.of("dataset", dataset, "trainResult", trainResult));
+            } catch (Exception e) {
+                return ResponseEntity.ok(Map.of("dataset", dataset,
+                        "trainResult", Map.of("message", "AI engine training failed: " + e.getMessage())));
+            }
+        }).orElse(ResponseEntity.notFound().build());
+    }
 }

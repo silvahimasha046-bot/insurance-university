@@ -69,6 +69,21 @@ public class AiEngineClient {
     public Map<String, Object> train(MultipartFile file) throws IOException {
         byte[] bytes = file.getBytes();
         String filename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "dataset.csv";
+        return trainBytes(bytes, filename);
+    }
+
+    /**
+     * Calls the AI engine POST /train endpoint using a file already on disk.
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> trainFromPath(String storedPath, String originalFilename) throws IOException {
+        byte[] bytes = java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(storedPath));
+        String filename = originalFilename != null ? originalFilename : "dataset.csv";
+        return trainBytes(bytes, filename);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> trainBytes(byte[] bytes, String filename) throws IOException {
 
         ByteArrayResource resource = new ByteArrayResource(bytes) {
             @Override

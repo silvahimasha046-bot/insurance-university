@@ -31,6 +31,7 @@ export class AdminApiService {
     return this.http.post(`${API}/training/datasets`, fd);
   }
   listDatasets(): Observable<any[]> { return this.http.get<any[]>(`${API}/training/datasets`); }
+  retrainDataset(id: number): Observable<any> { return this.http.post(`${API}/training/datasets/${id}/retrain`, {}); }
 
   // Model Versions
   createModel(body: any): Observable<any> { return this.http.post(`${API}/training/models`, body); }

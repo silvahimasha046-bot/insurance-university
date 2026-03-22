@@ -58,35 +58,121 @@
       <p class="text-gray-500 dark:text-[#92adc9] text-xs font-semibold mt-2 uppercase tracking-wider">Step 1 of 3</p>
     </div>
 
-    <main class="px-4 pb-10">
-      <h1 class="text-gray-900 dark:text-white text-[32px] font-bold text-center pb-4 pt-4">
-        Ayubowan! How can we protect your future today?
+    <main class="px-4 pb-28">
+      <h1 class="text-gray-900 dark:text-white text-[28px] font-bold text-center pb-2 pt-4">
+        Ayubowan! Tell us about yourself
       </h1>
-
-      <p class="text-gray-600 dark:text-[#92adc9] text-center mb-4">
-        Tell us your insurance needs (text or voice).
+      <p class="text-gray-600 dark:text-[#92adc9] text-center mb-6 text-sm">
+        Help us understand your insurance needs.
       </p>
 
-      <div class="relative">
-        <textarea
-          class="w-full min-h-[200px] rounded-xl border border-gray-300 dark:border-[#324d67] bg-white dark:bg-[#192633] p-4 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-[#92adc9] focus:border-primary focus:ring-1 focus:ring-primary"
-          placeholder="Ex: I need life insurance for my family in Gampaha..."
-          [(ngModel)]="needsText"
-          (ngModelChange)="persist()"
-        ></textarea>
+      <!-- Needs text -->
+      <div class="space-y-5">
+        <div class="relative">
+          <p class="text-gray-900 dark:text-white font-medium pb-2">What are your insurance needs?</p>
+          <textarea
+            class="w-full min-h-[120px] rounded-xl border border-gray-300 dark:border-[#324d67] bg-white dark:bg-[#192633] p-4 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-[#92adc9] focus:border-primary focus:ring-1 focus:ring-primary"
+            placeholder="Ex: I need life insurance for my family in Gampaha..."
+            [(ngModel)]="needsText"
+            (ngModelChange)="persist()"
+          ></textarea>
+          <button class="absolute bottom-4 right-4 bg-primary text-white p-2 rounded-full shadow hover:bg-primary/90">
+            <span class="material-symbols-outlined text-lg">mic</span>
+          </button>
+        </div>
 
-        <button class="absolute bottom-4 right-4 bg-primary text-white p-3 rounded-full shadow-lg hover:bg-primary/90">
-          <span class="material-symbols-outlined">mic</span>
-        </button>
+        <!-- Education Level -->
+        <label class="block">
+          <p class="text-gray-900 dark:text-white font-medium pb-2">Highest Education Level</p>
+          <select
+            class="w-full h-12 rounded-lg border border-slate-200 dark:border-[#324d67] bg-white dark:bg-[#192633] px-4 text-gray-900 dark:text-white"
+            [(ngModel)]="educationLevel"
+            (ngModelChange)="persist()">
+            <option value="Postgrad">Postgraduate</option>
+            <option value="Undergrad">Undergraduate</option>
+            <option value="College">College / Diploma</option>
+            <option value="HighSchool">High School</option>
+            <option value="Elementary">Elementary</option>
+          </select>
+        </label>
+
+        <!-- Occupation -->
+        <label class="block">
+          <p class="text-gray-900 dark:text-white font-medium pb-2">Occupation</p>
+          <input
+            type="text"
+            class="w-full h-12 rounded-lg border border-slate-200 dark:border-[#324d67] bg-white dark:bg-[#192633] px-4 text-gray-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-[#92adc9] focus:border-primary focus:ring-1 focus:ring-primary"
+            placeholder="e.g. Software Engineer, Teacher, Driver"
+            [(ngModel)]="occupation"
+            (ngModelChange)="persist()" />
+        </label>
+
+        <!-- Hazard Level -->
+        <label class="block">
+          <p class="text-gray-900 dark:text-white font-medium pb-2">
+            Occupation Hazard Level
+            <span class="text-xs font-normal text-slate-400 ml-1">(1 = Office/Desk · 6 = High-risk field work)</span>
+          </p>
+          <div class="flex gap-2">
+            <ng-container *ngFor="let lvl of [1,2,3,4,5,6]">
+              <button
+                class="flex-1 h-10 rounded-lg border font-bold text-sm transition-colors"
+                [class.bg-primary]="occupationHazardLevel === lvl"
+                [class.text-white]="occupationHazardLevel === lvl"
+                [class.border-primary]="occupationHazardLevel === lvl"
+                [class.border-slate-200]="occupationHazardLevel !== lvl"
+                [class.dark:border-slate-700]="occupationHazardLevel !== lvl"
+                [class.text-slate-600]="occupationHazardLevel !== lvl"
+                [class.dark:text-slate-400]="occupationHazardLevel !== lvl"
+                (click)="occupationHazardLevel = lvl; persist()">
+                {{ lvl }}
+              </button>
+            </ng-container>
+          </div>
+        </label>
+
+        <!-- Legal Status -->
+        <div class="rounded-xl border border-slate-200 dark:border-[#324d67] bg-white dark:bg-[#192633] p-4 space-y-3">
+          <p class="text-gray-900 dark:text-white font-medium">Legal &amp; Compliance Disclosures</p>
+
+          <label class="flex items-start gap-3 cursor-pointer">
+            <input type="checkbox" class="w-5 h-5 mt-0.5 rounded accent-primary"
+              [(ngModel)]="isPep" (ngModelChange)="persist()" />
+            <span class="text-slate-700 dark:text-[#92adc9] text-sm">
+              Are you a <span class="font-semibold">Politically Exposed Person (PEP)</span> or closely related to one?
+            </span>
+          </label>
+
+          <label class="flex items-start gap-3 cursor-pointer">
+            <input type="checkbox" class="w-5 h-5 mt-0.5 rounded accent-primary"
+              [(ngModel)]="hasCriminalHistory" (ngModelChange)="persist()" />
+            <span class="text-slate-700 dark:text-[#92adc9] text-sm">
+              Have you ever been <span class="font-semibold">convicted of a criminal offence</span> or have litigation pending against you?
+            </span>
+          </label>
+
+          <div *ngIf="isPep || hasCriminalHistory"
+            class="flex items-start gap-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 p-3 text-amber-700 dark:text-amber-400 text-xs">
+            <span class="material-symbols-outlined text-base mt-0.5">warning</span>
+            <span>Your application will require enhanced manual underwriting review (Referral Required).</span>
+          </div>
+        </div>
       </div>
-
-      <p class="text-gray-500 dark:text-[#92adc9] text-sm font-normal leading-normal text-center mt-4">
-        Supports <span class="font-semibold text-primary">Sinhala</span> and <span class="font-semibold text-primary">English</span> voice input
-      </p>
 
       <div class="mt-8">
         <button class="w-full bg-primary text-white font-bold py-4 rounded-xl" (click)="next()">
-          Analyze My Needs
+          Continue
+          <span class="material-symbols-outlined align-middle ml-1">arrow_forward</span>
+        </button>
+      </div>
+
+      <p class="text-gray-500 dark:text-[#92adc9] text-xs text-center mt-4">
+        Supports <span class="font-semibold text-primary">Sinhala</span> and <span class="font-semibold text-primary">English</span> voice input
+      </p>
+
+      <div class="mt-4 text-center">
+        <button (click)="withdrawConsent()" class="text-xs text-slate-400 underline hover:text-red-500 transition-colors">
+          Withdraw consent &amp; delete my data
         </button>
       </div>
     </main>

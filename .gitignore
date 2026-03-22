@@ -6,7 +6,9 @@ frontend/.angular/
 
 # Python
 ai-engine/__pycache__/
+ai-engine/**/__pycache__/
 ai-engine/*.pyc
+ai-engine/**/*.pyc
 ai-engine/.venv/
 ai-engine/venv/
 
