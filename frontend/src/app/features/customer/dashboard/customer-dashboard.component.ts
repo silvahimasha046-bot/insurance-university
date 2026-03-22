@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { CustomerAuthService } from '../../../core/services/customer-auth.service';
 import { CustomerApiService } from '../../../core/customer-api.service';
+import { finalize, take } from 'rxjs';
 
 export interface CustomerSession {
   sessionId: string;
@@ -28,6 +29,7 @@ export class CustomerDashboardComponent implements OnInit {
   constructor(
     private auth: CustomerAuthService,
     private customerApi: CustomerApiService,
+    private cd: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -52,16 +54,25 @@ export class CustomerDashboardComponent implements OnInit {
   }
 
   loadSessions(): void {
+    console.log("Loading sessions...");
     this.sessionsLoading = true;
     this.sessionsError = false;
-    this.customerApi.listSessions().subscribe({
+    this.customerApi.listSessions().pipe(
+        take(1),
+        finalize(() => {
+          this.sessionsLoading = false;
+          this.cd.markForCheck();
+          console.log("Session Loading:", this.sessionsLoading);
+        })
+      ).subscribe({
       next: (data) => {
         this.sessions = data as CustomerSession[];
-        this.sessionsLoading = false;
+        console.log("Loaded sessions:", this.sessions);
+        console.log("Session Loading:", this.sessionsLoading);
       },
       error: () => {
         this.sessionsError = true;
-        this.sessionsLoading = false;
+        console.log("Failed to load sessions.");
       },
     });
   }
