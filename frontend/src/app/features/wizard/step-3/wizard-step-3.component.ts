@@ -20,7 +20,7 @@ export class WizardStep3Component implements OnInit {
   heartDisease = false;
   cancer = false;
   stroke = false;
-  kidneyDisorder = false;
+  otherOrganIssues = false;
   hospitalization5Yrs = false;
   familyHistory = false;
 
@@ -41,7 +41,7 @@ export class WizardStep3Component implements OnInit {
     if (typeof s?.heartDisease === "boolean") this.heartDisease = s.heartDisease;
     if (typeof s?.cancer === "boolean") this.cancer = s.cancer;
     if (typeof s?.stroke === "boolean") this.stroke = s.stroke;
-    if (typeof s?.kidneyDisorder === "boolean") this.kidneyDisorder = s.kidneyDisorder;
+    if (typeof s?.otherOrganIssues === "boolean") this.otherOrganIssues = s.otherOrganIssues;
     if (typeof s?.hospitalization5Yrs === "boolean") this.hospitalization5Yrs = s.hospitalization5Yrs;
     if (typeof s?.familyHistory === "boolean") this.familyHistory = s.familyHistory;
     if (typeof s?.hazardousPursuits === "boolean") this.hazardousPursuits = s.hazardousPursuits;
@@ -54,7 +54,7 @@ export class WizardStep3Component implements OnInit {
   }
 
   get hasTraditionalDiseaseFlag(): boolean {
-    return this.heartDisease || this.cancer || this.stroke || this.kidneyDisorder;
+    return this.heartDisease || this.cancer || this.stroke || this.otherOrganIssues;
   }
 
   get eligibilityWarning(): string | null {
@@ -81,7 +81,7 @@ export class WizardStep3Component implements OnInit {
       heartDisease: this.heartDisease,
       cancer: this.cancer,
       stroke: this.stroke,
-      kidneyDisorder: this.kidneyDisorder,
+      otherOrganIssues: this.otherOrganIssues,
       hospitalization5Yrs: this.hospitalization5Yrs,
       familyHistory: this.familyHistory,
       hazardousPursuits: this.hazardousPursuits,
@@ -104,7 +104,7 @@ export class WizardStep3Component implements OnInit {
           heartDisease: this.heartDisease,
           cancer: this.cancer,
           stroke: this.stroke,
-          kidneyDisorder: this.kidneyDisorder,
+          otherOrganIssues: this.otherOrganIssues,
           hospitalization5Yrs: this.hospitalization5Yrs,
           familyHistory: this.familyHistory,
           hazardousPursuits: this.hazardousPursuits,

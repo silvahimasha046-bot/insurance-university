@@ -194,7 +194,7 @@ export class AdminProductsComponent implements OnInit {
   }
 
   addCustomTag(): void {
-    const tag = this.customTagInput.trim().toLowerCase().replace(/\s+/g, '-');
+    const tag = this.customTagInput.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
     if (tag) {
       this.selectedTags.add(tag);
       this.customTagInput = '';

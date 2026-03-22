@@ -258,17 +258,17 @@ def _predict_coverage(features: dict[str, Any]) -> float:
         # Calculate years until youngest child reaches 21
         if children_ages_raw:
             try:
-                ages = [int(a.strip()) for a in str(children_ages_raw).split(",") if a.strip().isdigit()]
+                ages = [int(a.strip()) for a in str(children_ages_raw).split(",")
+                        if a.strip().lstrip('-').isdigit()]
                 if ages:
                     youngest = min(ages)
                     years_remaining = max(0, 21 - youngest)
                     if years_remaining > 0:
                         coverage = monthly_expenses * 12 * years_remaining
                         return round(min(coverage, MAX_COVERAGE_LKR), 0)
-                    # Youngest child already 21+ — fall through to default 15-year period
             except (ValueError, TypeError):
                 pass
-        # Fallback: 15-year education period
+        # Fallback: 15-year education period (youngest child already 21+, or no children ages provided)
         coverage = monthly_expenses * 12 * 15
     elif protection_purpose == "RetirementSupplement":
         # 20-year retirement income replacement
@@ -561,7 +561,7 @@ async def train(file: UploadFile = File(...)):
         diff = non_avg - smo_avg
         if diff < 0:
             logger.warning(
-                "Unexpected pattern: smokers scored higher (diff=%.4f). Skipping smoker_penalty update.", diff
+                "Unexpected pattern: smokers scored higher (diff=%.4f). skipping smoker_penalty update.", diff
             )
         else:
             _weights["smoker_penalty"] = round(min(max(diff, 0.05), 0.40), 4)

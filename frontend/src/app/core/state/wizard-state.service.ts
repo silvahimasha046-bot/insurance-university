@@ -49,7 +49,7 @@ export interface WizardState {
     heartDisease?: boolean;
     cancer?: boolean;
     stroke?: boolean;
-    kidneyDisorder?: boolean;
+    otherOrganIssues?: boolean;
     hospitalization5Yrs?: boolean;
     familyHistory?: boolean;
     hazardousPursuits?: boolean;
