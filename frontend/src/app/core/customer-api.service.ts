@@ -14,6 +14,10 @@ export interface RankedProduct {
   affordabilityScore: number;
   lapseProbability: number;
   reasons: string[];
+  eligibilityDecision?: string;
+  predictedCoverage?: number;
+  suitabilityRank?: number;
+  riderExclusions?: string[];
 }
 
 export interface RecommendationResponse {

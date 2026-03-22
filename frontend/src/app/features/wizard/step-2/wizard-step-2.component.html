@@ -1,5 +1,5 @@
 <div class="bg-background-light dark:bg-background-dark font-display min-h-screen flex justify-center">
-  <div class="w-full max-w-[430px] min-h-screen border-x border-primary/10 pb-24">
+  <div class="w-full max-w-[430px] min-h-screen border-x border-primary/10 pb-28">
     <div class="flex items-center p-4 justify-between sticky top-0 z-10 bg-background-light dark:bg-background-dark border-b border-gray-200 dark:border-gray-800">
       <div class="flex size-12 items-center cursor-pointer" routerLink="/wizard/step-1">
         <span class="material-symbols-outlined text-primary dark:text-white">arrow_back</span>
@@ -23,35 +23,190 @@
     </div>
 
     <div class="px-4">
-      <h3 class="text-gray-900 dark:text-white text-2xl font-bold">Coverage Analysis</h3>
+      <h3 class="text-gray-900 dark:text-white text-2xl font-bold">Financial &amp; Dependency Profile</h3>
       <p class="text-slate-500 dark:text-[#92adc9] text-sm mt-1">
-        Help us understand your financial situation.
+        Help us understand your financial situation and coverage needs.
       </p>
     </div>
 
-    <div class="px-4 py-4 space-y-4">
-      <label class="block">
-        <p class="text-gray-900 dark:text-white font-medium pb-2">Monthly Household Income</p>
-        <div class="relative">
-          <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#92adc9] font-medium">LKR</span>
-          <input
-            class="w-full h-14 rounded-lg border border-slate-200 dark:border-[#324d67] bg-white dark:bg-[#192633] pl-14 pr-4 text-gray-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-[#92adc9] focus:border-primary focus:ring-1 focus:ring-primary"
-            type="number"
-            [(ngModel)]="monthlyIncomeLkr"
-            (ngModelChange)="persist()"
-          />
-        </div>
-      </label>
+    <div class="px-4 py-4 space-y-5">
 
-      <label class="block">
-        <p class="text-gray-900 dark:text-white font-medium pb-2">Existing loans</p>
-        <textarea
-          class="w-full min-h-[100px] rounded-lg border border-slate-200 dark:border-[#324d67] bg-white dark:bg-[#192633] p-4 text-gray-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-[#92adc9] focus:border-primary focus:ring-1 focus:ring-primary resize-none"
-          placeholder="Housing Loan / Vehicle Lease details..."
-          [(ngModel)]="loansText"
-          (ngModelChange)="persist()"
-        ></textarea>
-      </label>
+      <!-- Section: Financial Profile -->
+      <div class="rounded-xl border border-slate-200 dark:border-[#324d67] bg-white dark:bg-[#192633] p-4 space-y-4">
+        <p class="text-gray-900 dark:text-white font-semibold text-sm uppercase tracking-wider">Financial Profile</p>
+
+        <label class="block">
+          <p class="text-gray-700 dark:text-[#92adc9] text-sm font-medium pb-1.5">Monthly Household Income</p>
+          <div class="relative">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#92adc9] font-medium text-sm">LKR</span>
+            <input
+              class="w-full h-12 rounded-lg border border-slate-200 dark:border-[#324d67] bg-slate-50 dark:bg-[#101922] pl-14 pr-4 text-gray-900 dark:text-white focus:border-primary focus:ring-1 focus:ring-primary"
+              type="number" min="0"
+              [(ngModel)]="monthlyIncomeLkr"
+              (ngModelChange)="persist()" />
+          </div>
+        </label>
+
+        <label class="block">
+          <p class="text-gray-700 dark:text-[#92adc9] text-sm font-medium pb-1.5">Monthly Expenses (incl. living &amp; debt)</p>
+          <div class="relative">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#92adc9] font-medium text-sm">LKR</span>
+            <input
+              class="w-full h-12 rounded-lg border border-slate-200 dark:border-[#324d67] bg-slate-50 dark:bg-[#101922] pl-14 pr-4 text-gray-900 dark:text-white focus:border-primary focus:ring-1 focus:ring-primary"
+              type="number" min="0"
+              [(ngModel)]="monthlyExpensesLkr"
+              (ngModelChange)="persist()" />
+          </div>
+        </label>
+
+        <!-- Disposable income indicator -->
+        <div class="flex justify-between text-xs text-slate-500 dark:text-[#92adc9] px-1">
+          <span>Disposable income</span>
+          <span class="font-semibold" [class.text-green-500]="disposableIncome > 0" [class.text-red-500]="disposableIncome <= 0">
+            LKR {{ disposableIncome | number:'1.0-0' }}
+          </span>
+        </div>
+
+        <label class="block">
+          <p class="text-gray-700 dark:text-[#92adc9] text-sm font-medium pb-1.5">Estimated Net Worth</p>
+          <div class="relative">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#92adc9] font-medium text-sm">LKR</span>
+            <input
+              class="w-full h-12 rounded-lg border border-slate-200 dark:border-[#324d67] bg-slate-50 dark:bg-[#101922] pl-14 pr-4 text-gray-900 dark:text-white focus:border-primary focus:ring-1 focus:ring-primary"
+              type="number" min="0"
+              [(ngModel)]="netWorthLkr"
+              (ngModelChange)="persist()" />
+          </div>
+        </label>
+
+        <label class="block">
+          <p class="text-gray-700 dark:text-[#92adc9] text-sm font-medium pb-1.5">Liquid Net Worth</p>
+          <div class="relative">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#92adc9] font-medium text-sm">LKR</span>
+            <input
+              class="w-full h-12 rounded-lg border border-slate-200 dark:border-[#324d67] bg-slate-50 dark:bg-[#101922] pl-14 pr-4 text-gray-900 dark:text-white focus:border-primary focus:ring-1 focus:ring-primary"
+              type="number" min="0"
+              [(ngModel)]="liquidNetWorthLkr"
+              (ngModelChange)="persist()" />
+          </div>
+        </label>
+
+        <label class="block">
+          <p class="text-gray-700 dark:text-[#92adc9] text-sm font-medium pb-1.5">Target Monthly Premium Range (LKR)</p>
+          <select
+            class="w-full h-12 rounded-lg border border-slate-200 dark:border-[#324d67] bg-slate-50 dark:bg-[#101922] px-4 text-gray-900 dark:text-white"
+            [(ngModel)]="targetPremiumRange"
+            (ngModelChange)="persist()">
+            <option value="0-5000">Up to 5,000</option>
+            <option value="5000-10000">5,000 – 10,000</option>
+            <option value="10000-20000">10,000 – 20,000</option>
+            <option value="20000-50000">20,000 – 50,000</option>
+            <option value="50000+">Over 50,000</option>
+          </select>
+        </label>
+
+        <label class="block">
+          <p class="text-gray-700 dark:text-[#92adc9] text-sm font-medium pb-1.5">Premium Payment Duration</p>
+          <select
+            class="w-full h-12 rounded-lg border border-slate-200 dark:border-[#324d67] bg-slate-50 dark:bg-[#101922] px-4 text-gray-900 dark:text-white"
+            [(ngModel)]="premiumPaymentYears"
+            (ngModelChange)="persist()">
+            <option value="1Year">1 Year (Single Premium)</option>
+            <option value="10Years">10 Years</option>
+            <option value="LifeExpectancy">Until Life Expectancy</option>
+            <option value="AllYears">All Years (Whole Term)</option>
+          </select>
+        </label>
+
+        <label class="block">
+          <p class="text-gray-700 dark:text-[#92adc9] text-sm font-medium pb-1.5">Existing Loans / Liabilities</p>
+          <textarea
+            class="w-full min-h-[80px] rounded-lg border border-slate-200 dark:border-[#324d67] bg-slate-50 dark:bg-[#101922] p-4 text-gray-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-[#92adc9] focus:border-primary focus:ring-1 focus:ring-primary resize-none text-sm"
+            placeholder="Housing Loan / Vehicle Lease details..."
+            [(ngModel)]="loansText"
+            (ngModelChange)="persist()"></textarea>
+        </label>
+      </div>
+
+      <!-- Section: Dependency Factors -->
+      <div class="rounded-xl border border-slate-200 dark:border-[#324d67] bg-white dark:bg-[#192633] p-4 space-y-4">
+        <p class="text-gray-900 dark:text-white font-semibold text-sm uppercase tracking-wider">Dependency &amp; Protection Intent</p>
+
+        <label class="block">
+          <p class="text-gray-700 dark:text-[#92adc9] text-sm font-medium pb-1.5">Number of Dependants (spouse, parents, children)</p>
+          <input
+            class="w-full h-12 rounded-lg border border-slate-200 dark:border-[#324d67] bg-slate-50 dark:bg-[#101922] px-4 text-gray-900 dark:text-white focus:border-primary focus:ring-1 focus:ring-primary"
+            type="number" min="0" max="20"
+            [(ngModel)]="memberCount"
+            (ngModelChange)="persist()" />
+        </label>
+
+        <label class="block">
+          <p class="text-gray-700 dark:text-[#92adc9] text-sm font-medium pb-1.5">Children's Ages <span class="font-normal text-slate-400">(comma-separated, e.g. 5, 8, 12)</span></p>
+          <input
+            class="w-full h-12 rounded-lg border border-slate-200 dark:border-[#324d67] bg-slate-50 dark:bg-[#101922] px-4 text-gray-900 dark:text-white placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary"
+            type="text"
+            placeholder="e.g. 5, 8, 12"
+            [(ngModel)]="childrenAges"
+            (ngModelChange)="persist()" />
+        </label>
+
+        <label class="block">
+          <p class="text-gray-700 dark:text-[#92adc9] text-sm font-medium pb-1.5">Primary Purpose of Coverage</p>
+          <select
+            class="w-full h-12 rounded-lg border border-slate-200 dark:border-[#324d67] bg-slate-50 dark:bg-[#101922] px-4 text-gray-900 dark:text-white"
+            [(ngModel)]="protectionPurpose"
+            (ngModelChange)="persist()">
+            <option value="SurvivorIncome">Survivor Income (replace my income)</option>
+            <option value="EducationFunding">Education Funding (children's future)</option>
+            <option value="RetirementSupplement">Retirement Supplement</option>
+            <option value="EstateLiquidity">Estate Liquidity / Wealth Transfer</option>
+          </select>
+        </label>
+
+        <!-- Coverage estimate -->
+        <div class="rounded-lg bg-primary/10 p-3 text-sm">
+          <p class="text-primary font-semibold">Estimated Coverage Needed</p>
+          <p class="text-gray-700 dark:text-[#92adc9] text-xs mt-0.5">Based on 10× annual expenses (survivor income model)</p>
+          <p class="text-gray-900 dark:text-white font-bold text-lg mt-1">LKR {{ recommendedCoverageLkr | number:'1.0-0' }}</p>
+        </div>
+      </div>
+
+      <!-- Section: Design Priorities -->
+      <div class="rounded-xl border border-slate-200 dark:border-[#324d67] bg-white dark:bg-[#192633] p-4 space-y-4">
+        <p class="text-gray-900 dark:text-white font-semibold text-sm uppercase tracking-wider">Policy Design Priorities</p>
+        <p class="text-slate-500 dark:text-[#92adc9] text-xs">Rate each priority 1 (low) to 5 (high). This helps the AI match the right product design.</p>
+
+        <ng-container *ngFor="let item of [
+          {label: 'Safety', desc: 'Protection over return', model: 'prioritySafety'},
+          {label: 'Flexibility', desc: 'Ability to modify later', model: 'priorityFlexibility'},
+          {label: 'Equity', desc: 'Accessible cash value', model: 'priorityEquity'},
+          {label: 'Certainty', desc: 'Guaranteed performance', model: 'priorityCertainty'},
+          {label: 'Premium Level', desc: 'Minimise out-of-pocket cost', model: 'priorityPremiumLevel'}
+        ]">
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="text-gray-800 dark:text-white text-sm font-medium">{{ item.label }}</p>
+              <p class="text-slate-400 dark:text-slate-500 text-xs">{{ item.desc }}</p>
+            </div>
+            <div class="flex gap-1">
+              <ng-container *ngFor="let v of [1,2,3,4,5]">
+                <button
+                  class="w-8 h-8 rounded-lg border text-xs font-bold transition-colors"
+                  [class.bg-primary]="getPriorityValue(item.model) === v"
+                  [class.text-white]="getPriorityValue(item.model) === v"
+                  [class.border-primary]="getPriorityValue(item.model) === v"
+                  [class.border-slate-200]="getPriorityValue(item.model) !== v"
+                  [class.dark:border-slate-700]="getPriorityValue(item.model) !== v"
+                  [class.text-slate-500]="getPriorityValue(item.model) !== v"
+                  (click)="setPriorityValue(item.model, v)">
+                  {{ v }}
+                </button>
+              </ng-container>
+            </div>
+          </div>
+        </ng-container>
+      </div>
     </div>
 
     <div class="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-white/80 dark:bg-background-dark/80 backdrop-blur-md p-4 flex gap-3 border-t border-gray-200 dark:border-gray-800">

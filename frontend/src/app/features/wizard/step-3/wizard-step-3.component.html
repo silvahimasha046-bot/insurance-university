@@ -1,38 +1,46 @@
-<div class="bg-background-light dark:bg-background-dark font-display min-h-screen flex items-center justify-center p-4">
-  <div class="w-full max-w-2xl bg-white dark:bg-slate-900 shadow-xl rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800">
-    <div class="px-8 py-6 border-b border-slate-200 dark:border-slate-800">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-xl font-bold text-slate-900 dark:text-white">Web Intake Wizard</h2>
-        <div class="flex items-center gap-3">
-          <ng-container *ngIf="!isLoggedIn">
-            <a routerLink="/login" class="text-gray-600 dark:text-gray-400 text-xs font-bold hover:text-primary transition-colors">Login</a>
-            <a routerLink="/register" class="bg-primary text-white text-xs px-2.5 py-1 rounded-lg font-bold hover:bg-primary/90 transition-colors">Register</a>
-          </ng-container>
-          <span class="text-primary text-sm font-bold uppercase tracking-wider">Step 3 of 3</span>
-        </div>
+<div class="bg-background-light dark:bg-background-dark font-display min-h-screen flex justify-center">
+  <div class="w-full max-w-[430px] min-h-screen border-x border-primary/10 pb-28">
+
+    <div class="flex items-center p-4 justify-between sticky top-0 z-10 bg-background-light dark:bg-background-dark border-b border-gray-200 dark:border-gray-800">
+      <div class="flex size-12 items-center cursor-pointer" routerLink="/wizard/step-2">
+        <span class="material-symbols-outlined text-primary dark:text-white">arrow_back</span>
       </div>
-      <div class="flex gap-2">
-        <div class="h-2 flex-1 rounded-full bg-primary"></div>
-        <div class="h-2 flex-1 rounded-full bg-primary"></div>
-        <div class="h-2 flex-1 rounded-full bg-primary"></div>
+      <h2 class="text-gray-900 dark:text-white text-lg font-bold flex-1 text-center">Intake Wizard</h2>
+      <div class="flex items-center gap-2">
+        <ng-container *ngIf="!isLoggedIn">
+          <a routerLink="/login" class="text-gray-600 dark:text-gray-400 text-xs font-bold hover:text-primary transition-colors">Login</a>
+          <a routerLink="/register" class="bg-primary text-white text-xs px-2.5 py-1 rounded-lg font-bold hover:bg-primary/90 transition-colors">Register</a>
+        </ng-container>
       </div>
     </div>
 
-    <div class="p-8 space-y-8">
-      <div>
-        <h3 class="text-2xl font-bold text-slate-900 dark:text-white mb-2">Health &amp; Lifestyle Profile</h3>
-        <p class="text-slate-600 dark:text-slate-400 text-sm">
-          This information helps refine your premium estimates.
-        </p>
+    <div class="flex flex-col items-center py-5 gap-2">
+      <div class="flex w-full justify-center gap-3 px-4">
+        <div class="h-1.5 w-1/4 rounded-full bg-primary"></div>
+        <div class="h-1.5 w-1/4 rounded-full bg-primary"></div>
+        <div class="h-1.5 w-1/4 rounded-full bg-primary"></div>
       </div>
+      <p class="text-xs font-semibold text-primary/80 uppercase tracking-wider">Step 3 of 3</p>
+    </div>
 
-      <div class="space-y-4">
+    <div class="px-4">
+      <h3 class="text-gray-900 dark:text-white text-2xl font-bold">Health &amp; Lifestyle Profile</h3>
+      <p class="text-slate-500 dark:text-[#92adc9] text-sm mt-1">
+        Accurate disclosures ensure correct eligibility and premium assessment.
+      </p>
+    </div>
+
+    <div class="px-4 py-4 space-y-5">
+
+      <!-- Overall Health -->
+      <div class="rounded-xl border border-slate-200 dark:border-[#324d67] bg-white dark:bg-[#192633] p-4 space-y-4">
+        <p class="text-gray-900 dark:text-white font-semibold text-sm uppercase tracking-wider">General Health</p>
+
         <label class="block">
-          <p class="text-slate-700 dark:text-slate-300 font-medium mb-2">Overall Health</p>
+          <p class="text-gray-700 dark:text-[#92adc9] text-sm font-medium pb-1.5">Overall Health Status</p>
           <select
-            class="w-full h-12 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 text-slate-900 dark:text-white"
-            [(ngModel)]="health"
-            (ngModelChange)="persist()">
+            class="w-full h-12 rounded-lg border border-slate-200 dark:border-[#324d67] bg-slate-50 dark:bg-[#101922] px-4 text-gray-900 dark:text-white"
+            [(ngModel)]="health" (ngModelChange)="persist()">
             <option value="excellent">Excellent</option>
             <option value="good">Good</option>
             <option value="average">Average</option>
@@ -42,30 +50,106 @@
 
         <label class="flex items-center gap-3 cursor-pointer">
           <input type="checkbox" class="w-5 h-5 rounded accent-primary" [(ngModel)]="tobaccoUse" (ngModelChange)="persist()" />
-          <span class="text-slate-700 dark:text-slate-300 font-medium">Tobacco / Nicotine use</span>
+          <span class="text-gray-700 dark:text-[#92adc9] text-sm font-medium">Tobacco / Nicotine use</span>
         </label>
 
         <label class="block">
-          <p class="text-slate-700 dark:text-slate-300 font-medium mb-2">Pre-existing Conditions <span class="font-normal text-slate-400">(comma-separated)</span></p>
+          <p class="text-gray-700 dark:text-[#92adc9] text-sm font-medium pb-1.5">
+            Other Pre-existing Conditions <span class="font-normal text-slate-400">(comma-separated)</span>
+          </p>
           <input
             type="text"
-            class="w-full h-12 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 text-slate-900 dark:text-white placeholder:text-slate-400"
+            class="w-full h-12 rounded-lg border border-slate-200 dark:border-[#324d67] bg-slate-50 dark:bg-[#101922] px-4 text-gray-900 dark:text-white placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary"
             placeholder="e.g. diabetes, hypertension"
             [(ngModel)]="conditionsText"
             (ngModelChange)="persist()" />
         </label>
       </div>
 
-      <div class="flex items-center justify-between">
-        <button class="px-8 py-3.5 rounded-xl border border-slate-300 dark:border-slate-700 font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800" routerLink="/wizard/step-2">
-          Back
-        </button>
+      <!-- Disease Flags (CART Gate) -->
+      <div class="rounded-xl border border-slate-200 dark:border-[#324d67] bg-white dark:bg-[#192633] p-4 space-y-3">
+        <p class="text-gray-900 dark:text-white font-semibold text-sm uppercase tracking-wider">Medical Disclosures</p>
+        <p class="text-slate-400 dark:text-slate-500 text-xs">A "Yes" answer triggers eligibility review for standard products.</p>
 
-        <button class="px-8 py-3.5 rounded-xl bg-primary text-white font-bold" (click)="seeRecommendations()">
-          See Recommendations
-          <span class="material-symbols-outlined ml-2 text-xl">arrow_forward</span>
-        </button>
+        <label class="flex items-start gap-3 cursor-pointer">
+          <input type="checkbox" class="w-5 h-5 mt-0.5 rounded accent-primary" [(ngModel)]="heartDisease" (ngModelChange)="persist()" />
+          <span class="text-gray-700 dark:text-[#92adc9] text-sm">
+            Have you ever had symptoms of <span class="font-semibold">chest pain, heart disease, high blood pressure, or high cholesterol</span>?
+          </span>
+        </label>
+
+        <label class="flex items-start gap-3 cursor-pointer">
+          <input type="checkbox" class="w-5 h-5 mt-0.5 rounded accent-primary" [(ngModel)]="cancer" (ngModelChange)="persist()" />
+          <span class="text-gray-700 dark:text-[#92adc9] text-sm">
+            Have you ever been treated for <span class="font-semibold">cancer, growth, tumor, cyst, or lump</span>?
+          </span>
+        </label>
+
+        <label class="flex items-start gap-3 cursor-pointer">
+          <input type="checkbox" class="w-5 h-5 mt-0.5 rounded accent-primary" [(ngModel)]="stroke" (ngModelChange)="persist()" />
+          <span class="text-gray-700 dark:text-[#92adc9] text-sm">
+            Have you had a <span class="font-semibold">stroke, kidney disorder (blood/protein in urine), cirrhosis, or a nervous disorder</span>?
+          </span>
+        </label>
+
+        <label class="flex items-start gap-3 cursor-pointer">
+          <input type="checkbox" class="w-5 h-5 mt-0.5 rounded accent-primary" [(ngModel)]="otherOrganIssues" (ngModelChange)="persist()" />
+          <span class="text-gray-700 dark:text-[#92adc9] text-sm">
+            Have you had any other <span class="font-semibold">undiagnosed or unspecified organ health issues</span> not captured by the questions above (e.g. liver disease, thyroid disorder)?
+          </span>
+        </label>
+
+        <label class="flex items-start gap-3 cursor-pointer">
+          <input type="checkbox" class="w-5 h-5 mt-0.5 rounded accent-primary" [(ngModel)]="hospitalization5Yrs" (ngModelChange)="persist()" />
+          <span class="text-gray-700 dark:text-[#92adc9] text-sm">
+            Have you been <span class="font-semibold">hospitalised or undergone surgery in the last 5 years</span>?
+          </span>
+        </label>
+
+        <label class="flex items-start gap-3 cursor-pointer">
+          <input type="checkbox" class="w-5 h-5 mt-0.5 rounded accent-primary" [(ngModel)]="familyHistory" (ngModelChange)="persist()" />
+          <span class="text-gray-700 dark:text-[#92adc9] text-sm">
+            Do you have a <span class="font-semibold">family history (2+ members)</span> of Heart Disease, Kidney Disease, Cancer, Stroke, or Diabetes?
+          </span>
+        </label>
       </div>
+
+      <!-- Hazardous Pursuits -->
+      <div class="rounded-xl border border-slate-200 dark:border-[#324d67] bg-white dark:bg-[#192633] p-4 space-y-3">
+        <p class="text-gray-900 dark:text-white font-semibold text-sm uppercase tracking-wider">Lifestyle &amp; Hazardous Pursuits</p>
+        <p class="text-slate-400 dark:text-slate-500 text-xs">Participation may exclude the Accidental Death Benefit rider.</p>
+
+        <label class="flex items-start gap-3 cursor-pointer">
+          <input type="checkbox" class="w-5 h-5 mt-0.5 rounded accent-primary" [(ngModel)]="hazardousPursuits" (ngModelChange)="persist()" />
+          <span class="text-gray-700 dark:text-[#92adc9] text-sm">
+            Do you participate in <span class="font-semibold">hazardous pursuits</span> such as hunting, mountaineering, diving, or racing of any kind?
+          </span>
+        </label>
+
+        <label class="flex items-start gap-3 cursor-pointer">
+          <input type="checkbox" class="w-5 h-5 mt-0.5 rounded accent-primary" [(ngModel)]="flyingActivity" (ngModelChange)="persist()" />
+          <span class="text-gray-700 dark:text-[#92adc9] text-sm">
+            Do you engage in any <span class="font-semibold">flying activity</span> other than as a fare-paying passenger on a scheduled airline?
+          </span>
+        </label>
+      </div>
+
+      <!-- Eligibility warning banner -->
+      <div *ngIf="eligibilityWarning"
+        class="flex items-start gap-3 rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-4">
+        <span class="material-symbols-outlined text-amber-500 text-xl mt-0.5">warning</span>
+        <p class="text-amber-700 dark:text-amber-400 text-sm">{{ eligibilityWarning }}</p>
+      </div>
+    </div>
+
+    <div class="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-white/80 dark:bg-background-dark/80 backdrop-blur-md p-4 flex gap-3 border-t border-gray-200 dark:border-gray-800">
+      <button class="flex-1 h-14 rounded-xl font-bold border border-slate-200 dark:border-[#324d67] text-gray-900 dark:text-white" routerLink="/wizard/step-2">
+        Back
+      </button>
+      <button class="flex-[2] h-14 rounded-xl font-bold bg-primary text-white" (click)="seeRecommendations()">
+        See Recommendations
+        <span class="material-symbols-outlined align-middle ml-1 text-xl">arrow_forward</span>
+      </button>
     </div>
   </div>
 </div>

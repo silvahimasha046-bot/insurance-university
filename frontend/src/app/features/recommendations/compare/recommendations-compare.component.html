@@ -9,7 +9,7 @@
     </div>
   </div>
 
-  <div class="p-4 max-w-xl mx-auto">
+  <div class="p-4 max-w-xl mx-auto pb-10">
     <h3 class="text-2xl font-bold">Your Selected Plan</h3>
     <p class="text-slate-500 dark:text-[#92adc9] text-sm mt-1">AI-powered analysis of your best match</p>
 
@@ -26,7 +26,24 @@
 
       <!-- Plan header -->
       <div class="rounded-xl p-5 bg-primary/10 border border-primary/30">
-        <p class="text-primary text-xs font-bold uppercase tracking-wider mb-1">AI Best Match</p>
+        <div class="flex items-center gap-2 flex-wrap mb-1">
+          <p class="text-primary text-xs font-bold uppercase tracking-wider">AI Best Match</p>
+          <span *ngIf="selectedPlan.policyType"
+            class="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary font-semibold">
+            {{ selectedPlan.policyType }}
+          </span>
+          <!-- Eligibility decision badge -->
+          <span *ngIf="selectedPlan.eligibilityDecision"
+            class="text-xs px-2 py-0.5 rounded-full font-semibold"
+            [class.bg-green-100]="selectedPlan.eligibilityDecision === 'Eligible'"
+            [class.text-green-700]="selectedPlan.eligibilityDecision === 'Eligible'"
+            [class.bg-amber-100]="selectedPlan.eligibilityDecision === 'Referral Required'"
+            [class.text-amber-700]="selectedPlan.eligibilityDecision === 'Referral Required'"
+            [class.bg-red-100]="selectedPlan.eligibilityDecision === 'No Offer'"
+            [class.text-red-700]="selectedPlan.eligibilityDecision === 'No Offer'">
+            {{ selectedPlan.eligibilityDecision }}
+          </span>
+        </div>
         <h4 class="text-xl font-bold">{{ selectedPlan.name }}</h4>
         <p class="text-slate-500 dark:text-[#92adc9] text-sm mt-1">Product code: {{ selectedPlan.id }}</p>
       </div>
@@ -48,9 +65,14 @@
           </span>
         </div>
 
-        <div class="flex justify-between py-2">
+        <div class="flex justify-between py-2 border-b border-gray-50 dark:border-gray-800">
           <span class="text-slate-500 dark:text-[#92adc9]">Annual Cost</span>
           <span class="font-bold">Rs. {{ (selectedPlan.premiumLkrPerMonth * 12) | number:'1.0-0' }}</span>
+        </div>
+
+        <div *ngIf="selectedPlan.predictedCoverage" class="flex justify-between py-2">
+          <span class="text-slate-500 dark:text-[#92adc9]">Recommended Coverage</span>
+          <span class="font-bold text-primary">LKR {{ selectedPlan.predictedCoverage | number:'1.0-0' }}</span>
         </div>
       </div>
 
@@ -66,10 +88,37 @@
         </div>
       </div>
 
+      <!-- Justification / Reasons -->
+      <div *ngIf="selectedPlan.reasons && selectedPlan.reasons.length > 0"
+        class="rounded-xl p-4 bg-white dark:bg-[#1a2632] border border-gray-100 dark:border-gray-800">
+        <h4 class="text-primary text-xs font-bold uppercase tracking-wider mb-3">AI Justification</h4>
+        <ul class="space-y-1.5">
+          <li *ngFor="let reason of selectedPlan.reasons"
+            class="flex items-start gap-2 text-sm text-slate-600 dark:text-[#92adc9]">
+            <span class="material-symbols-outlined text-primary text-sm mt-0.5">chevron_right</span>
+            {{ reason }}
+          </li>
+        </ul>
+      </div>
+
+      <!-- Rider exclusions -->
+      <div *ngIf="selectedPlan.riderExclusions && selectedPlan.riderExclusions.length > 0"
+        class="rounded-xl p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700">
+        <h4 class="text-amber-700 dark:text-amber-400 text-xs font-bold uppercase tracking-wider mb-2">Rider Exclusions</h4>
+        <ul class="space-y-1">
+          <li *ngFor="let excl of selectedPlan.riderExclusions"
+            class="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-400">
+            <span class="material-symbols-outlined text-amber-500 text-sm mt-0.5">warning</span>
+            {{ excl }}
+          </li>
+        </ul>
+      </div>
+
       <!-- Action buttons -->
       <button (click)="proceed()"
-        class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-xl">
-        Select {{ selectedPlan.name }}
+        class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-xl"
+        [disabled]="selectedPlan.eligibilityDecision === 'No Offer'">
+        {{ selectedPlan.eligibilityDecision === 'No Offer' ? 'Not Eligible — Contact Advisor' : 'Select ' + selectedPlan.name }}
         <span class="material-symbols-outlined align-middle ml-2">arrow_forward</span>
       </button>
 
