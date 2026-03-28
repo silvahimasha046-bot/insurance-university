@@ -270,7 +270,56 @@ public class CustomerSessionService {
         } else {
             m.put("tags", List.of());
         }
+
+        if (p.getCategory() != null) {
+            m.put("category", p.getCategory().getName());
+            m.put("categoryCode", p.getCategory().getCode());
+        }
+        if (p.getSubcategory() != null) {
+            m.put("subCategory", p.getSubcategory().getName());
+            m.put("subCategoryCode", p.getSubcategory().getCode());
+        }
+
+        putParsedJson(m, "benefits", p.getBenefitsJson());
+        putParsedJson(m, "riders", p.getRidersJson());
+        putParsedJson(m, "eligibility", p.getEligibilityJson());
+        putParsedJson(m, "sampleCalculations", p.getSampleCalculationsJson());
+        putParsedJson(m, "paymentModes", p.getPaymentModesJson());
+
+        putIfPresent(m, "howItWorks", p.getHowItWorksText());
+        putIfPresent(m, "additionalBenefits", p.getAdditionalBenefitsText());
+
+        if (p.getMinEligibleAge() != null) {
+            m.put("minEligibleAge", p.getMinEligibleAge());
+        }
+        if (p.getMaxEligibleAge() != null) {
+            m.put("maxEligibleAge", p.getMaxEligibleAge());
+        }
+        if (p.getMinPolicyTermYears() != null) {
+            m.put("minPolicyTermYears", p.getMinPolicyTermYears());
+        }
+        if (p.getMaxPolicyTermYears() != null) {
+            m.put("maxPolicyTermYears", p.getMaxPolicyTermYears());
+        }
         return m;
+    }
+
+    private void putIfPresent(Map<String, Object> target, String key, String value) {
+        if (value != null && !value.isBlank()) {
+            target.put(key, value);
+        }
+    }
+
+    private void putParsedJson(Map<String, Object> target, String key, String json) {
+        if (json == null || json.isBlank()) {
+            return;
+        }
+        try {
+            Object parsed = objectMapper.readValue(json, Object.class);
+            target.put(key, parsed);
+        } catch (JsonProcessingException e) {
+            log.warn("Invalid JSON in product metadata field {}: {}", key, e.getMessage());
+        }
     }
 
     private void writeSessionLog(String sessionId, String eventType, String detail) {

@@ -1,11 +1,13 @@
-import { Component, OnInit } from "@angular/core";
+import { ChangeDetectorRef, Component, OnInit } from "@angular/core";
 import { Router, RouterModule } from "@angular/router";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { WizardStateService } from "../../core/state/wizard-state.service";
-import { CustomerApiService, RankedProduct } from "../../core/customer-api.service";
-
-type SortKey = "suitability" | "price" | "affordability";
+import {
+  CustomerApiService,
+  FollowUpQuestion,
+  RankedProduct,
+} from "../../core/customer-api.service";
 
 @Component({
   selector: "app-recommendations",
@@ -16,86 +18,187 @@ type SortKey = "suitability" | "price" | "affordability";
 export class RecommendationsComponent implements OnInit {
   allProducts: RankedProduct[] = [];
   rankedProducts: RankedProduct[] = [];
+  followUpQuestions: FollowUpQuestion[] = [];
+  followUpAnswers: Record<string, unknown> = {};
   loading = false;
+  submittingFollowUps = false;
   error: string | null = null;
-  sortKey: SortKey = "suitability";
-
-  /** Policy type filter — "All" shows everything */
-  policyTypeFilter = "All";
-
-  readonly policyTypes = ["All", "Life", "Retirement", "Investment", "Critical Illness"];
+  followUpError: string | null = null;
+  expandedCards = new Set<string>();
 
   constructor(
     private wizard: WizardStateService,
     private router: Router,
-    private customerApi: CustomerApiService
+    private customerApi: CustomerApiService,
+    private cd: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
+    this.followUpAnswers = {
+      ...(this.wizard.snapshot.recommendationContext?.followUpAnswers ?? {}),
+    };
     const sessionId = this.customerApi.getStoredSessionId();
     if (sessionId) {
-      this.loading = true;
-      this.customerApi.getRecommendations(sessionId).subscribe({
-        next: (res) => {
-          this.allProducts = res.rankedProducts;
-          this.applyFilters();
-          this.loading = false;
-        },
-        error: (err) => {
-          console.warn("Could not fetch recommendations from backend", err);
-          this.error = "Could not load recommendations. Please ensure the backend is running.";
-          this.loading = false;
-          this.allProducts = [
-            {
-              code: "TERM-BASIC",
-              name: "Term Life Basic",
-              policyType: "Life",
-              score: 0.75,
-              monthlyPremiumEstimate: 3500,
-              affordabilityScore: 0.85,
-              lapseProbability: 0.12,
-              reasons: ["Good coverage for your profile"],
-              eligibilityDecision: "Eligible",
-              predictedCoverage: 5400000,
-              suitabilityRank: 1,
-              riderExclusions: [],
-            },
-          ];
-          this.applyFilters();
-        },
-      });
+      this.loadRecommendations(sessionId);
     }
   }
 
-  applyFilters(): void {
-    let filtered = [...this.allProducts];
-    if (this.policyTypeFilter !== "All") {
-      filtered = filtered.filter((p) =>
-        p.policyType?.toLowerCase().includes(this.policyTypeFilter.toLowerCase())
-      );
+  private loadRecommendations(sessionId: string): void {
+    this.loading = true;
+    this.customerApi.getRecommendations(sessionId).subscribe({
+      next: (res) => {
+        this.allProducts = res.rankedProducts;
+        this.followUpQuestions = res.followUpQuestions ?? [];
+        this.followUpError = null;
+        this.primeFollowUpAnswers();
+        this.applyRanking();
+        this.persistRecommendationContext();
+        this.loading = false;
+        this.cd.detectChanges();
+      },
+      error: (err) => {
+        console.warn("Could not fetch recommendations from backend", err);
+        this.error = "Could not load recommendations. Please ensure the backend is running.";
+        this.loading = false;
+        this.allProducts = [
+          {
+            code: "ENDOWMENT",
+            name: "Endowment",
+            policyType: "Life",
+            score: 0.75,
+            monthlyPremiumEstimate: 3500,
+            affordabilityScore: 0.85,
+            lapseProbability: 0.12,
+            reasons: ["Good coverage for your profile"],
+            eligibilityDecision: "Eligible",
+            predictedCoverage: 5400000,
+            suitabilityRank: 1,
+            riderExclusions: [],
+            category: "Life Insurance",
+            subCategory: "Protection Plans",
+          },
+        ];
+        this.followUpQuestions = [];
+        this.applyRanking();
+        this.persistRecommendationContext();
+      },
+    });
+  }
+
+  private applyRanking(): void {
+    this.rankedProducts = [...this.allProducts].sort((a, b) => {
+      const scoreDiff = (b.score ?? 0) - (a.score ?? 0);
+      if (scoreDiff !== 0) return scoreDiff;
+      return (a.monthlyPremiumEstimate ?? 0) - (b.monthlyPremiumEstimate ?? 0);
+    });
+  }
+
+  get topRecommendations(): RankedProduct[] {
+    return this.rankedProducts.slice(0, 3);
+  }
+
+  get shouldAskFollowUps(): boolean {
+    return this.followUpQuestions.length > 0;
+  }
+
+  submitFollowUps(): void {
+    const sessionId = this.customerApi.getStoredSessionId();
+    if (!sessionId) {
+      this.followUpError = "Session not found. Please restart the wizard.";
+      return;
     }
-    if (this.sortKey === "price") {
-      filtered.sort((a, b) => a.monthlyPremiumEstimate - b.monthlyPremiumEstimate);
-    } else if (this.sortKey === "affordability") {
-      filtered.sort((a, b) => (b.affordabilityScore ?? 0) - (a.affordabilityScore ?? 0));
+
+    const missingRequired = this.followUpQuestions.some((q) => {
+      if (!q.required) return false;
+      const value = this.followUpAnswers[q.key];
+      if (q.type === "boolean") return typeof value !== "boolean";
+      if (q.type === "number") return value === null || value === undefined || String(value).trim() === "";
+      return !value || String(value).trim() === "";
+    });
+    if (missingRequired) {
+      this.followUpError = "Please answer all required additional questions.";
+      return;
+    }
+
+    const payload = this.normalizedFollowUpPayload();
+    this.submittingFollowUps = true;
+    this.followUpError = null;
+    this.customerApi.submitAnswers(sessionId, payload).subscribe({
+      next: () => {
+        this.wizard.setRecommendationContext({
+          generatedAt: new Date().toISOString(),
+          followUpAnswers: {
+            ...(this.wizard.snapshot.recommendationContext?.followUpAnswers ?? {}),
+            ...payload,
+          },
+          followUpAskedCount: this.followUpQuestions.length,
+        });
+        this.loadRecommendations(sessionId);
+        this.submittingFollowUps = false;
+      },
+      error: (err) => {
+        console.warn("Could not save follow-up answers", err);
+        this.followUpError = "Could not submit additional answers. Please try again.";
+        this.submittingFollowUps = false;
+      },
+    });
+  }
+
+  private normalizedFollowUpPayload(): Record<string, unknown> {
+    const payload: Record<string, unknown> = {};
+    for (const q of this.followUpQuestions) {
+      const raw = this.followUpAnswers[q.key];
+      if (raw === undefined || raw === null || raw === "") continue;
+      if (q.type === "number") {
+        const parsed = Number(raw);
+        if (!Number.isNaN(parsed)) payload[q.key] = parsed;
+      } else if (q.type === "boolean") {
+        payload[q.key] = !!raw;
+      } else {
+        payload[q.key] = String(raw).trim();
+      }
+    }
+    return payload;
+  }
+
+  private primeFollowUpAnswers(): void {
+    for (const q of this.followUpQuestions) {
+      if (this.followUpAnswers[q.key] !== undefined) continue;
+      if (q.type === "boolean") this.followUpAnswers[q.key] = false;
+      else this.followUpAnswers[q.key] = "";
+    }
+  }
+
+  toggleExpanded(productCode: string): void {
+    if (this.expandedCards.has(productCode)) {
+      this.expandedCards.delete(productCode);
     } else {
-      filtered.sort((a, b) => b.score - a.score);
+      this.expandedCards.add(productCode);
     }
-    this.rankedProducts = filtered;
   }
 
-  applySort(): void {
-    this.applyFilters();
+  isExpanded(productCode: string): boolean {
+    return this.expandedCards.has(productCode);
   }
 
-  setSortKey(key: string): void {
-    this.sortKey = key as SortKey;
-    this.applyFilters();
+  get inferredCategory(): string {
+    const top = this.topRecommendations[0];
+    return top?.category || top?.productMetadata?.category || top?.policyType || "Life Insurance";
   }
 
-  setPolicyTypeFilter(type: string): void {
-    this.policyTypeFilter = type;
-    this.applyFilters();
+  get inferredSubcategory(): string {
+    const top = this.topRecommendations[0];
+    return top?.subCategory || top?.productMetadata?.subCategory || "Protection Plans";
+  }
+
+  private persistRecommendationContext(): void {
+    this.wizard.setRecommendationContext({
+      generatedAt: new Date().toISOString(),
+      inferredCategory: this.inferredCategory,
+      inferredSubcategory: this.inferredSubcategory,
+      topPlanCodes: this.topRecommendations.map((p) => p.code),
+      followUpAskedCount: this.followUpQuestions.length,
+    });
   }
 
   eligibilityBadgeClass(decision: string | undefined): string {

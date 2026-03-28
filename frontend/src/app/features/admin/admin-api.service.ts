@@ -4,15 +4,95 @@ import { Observable } from 'rxjs';
 
 const API = 'http://localhost:8080/api/admin';
 
+export interface AdminCategory {
+  id: number;
+  code: string;
+  name: string;
+  description?: string;
+  active?: boolean;
+  displayOrder?: number;
+}
+
+export interface AdminSubcategory {
+  id: number;
+  code: string;
+  name: string;
+  description?: string;
+  active?: boolean;
+  displayOrder?: number;
+  category?: Partial<AdminCategory>;
+}
+
+export interface AdminProduct {
+  id?: number;
+  code: string;
+  name: string;
+  basePremium: number;
+  tagsJson?: string;
+  category?: AdminCategory | null;
+  subcategory?: AdminSubcategory | null;
+  howItWorksText?: string;
+  benefitsJson?: string;
+  ridersJson?: string;
+  eligibilityJson?: string;
+  sampleCalculationsJson?: string;
+  paymentModesJson?: string;
+  additionalBenefitsText?: string;
+  minEligibleAge?: number | null;
+  maxEligibleAge?: number | null;
+  minPolicyTermYears?: number | null;
+  maxPolicyTermYears?: number | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AdminApiService {
   constructor(private http: HttpClient) {}
 
   // Products
-  listProducts(): Observable<any[]> { return this.http.get<any[]>(`${API}/products`); }
-  createProduct(body: any): Observable<any> { return this.http.post(`${API}/products`, body); }
-  updateProduct(id: number, body: any): Observable<any> { return this.http.put(`${API}/products/${id}`, body); }
+  listProducts(categoryId?: number | null, subcategoryId?: number | null): Observable<AdminProduct[]> {
+    let params = new HttpParams();
+    if (categoryId != null) params = params.set('categoryId', String(categoryId));
+    if (subcategoryId != null) params = params.set('subcategoryId', String(subcategoryId));
+    return this.http.get<AdminProduct[]>(`${API}/products`, { params });
+  }
+  createProduct(body: AdminProduct): Observable<AdminProduct> { return this.http.post<AdminProduct>(`${API}/products`, body); }
+  updateProduct(id: number, body: AdminProduct): Observable<AdminProduct> { return this.http.put<AdminProduct>(`${API}/products/${id}`, body); }
   deleteProduct(id: number): Observable<any> { return this.http.delete(`${API}/products/${id}`); }
+
+  // Product hierarchy
+  listCategories(): Observable<AdminCategory[]> {
+    return this.http.get<AdminCategory[]>(`${API}/categories`);
+  }
+
+  createCategory(body: Partial<AdminCategory>): Observable<AdminCategory> {
+    return this.http.post<AdminCategory>(`${API}/categories`, body);
+  }
+
+  updateCategory(id: number, body: Partial<AdminCategory>): Observable<AdminCategory> {
+    return this.http.put<AdminCategory>(`${API}/categories/${id}`, body);
+  }
+
+  deleteCategory(id: number): Observable<void> {
+    return this.http.delete<void>(`${API}/categories/${id}`);
+  }
+
+  listSubcategories(categoryId?: number | null): Observable<AdminSubcategory[]> {
+    let params = new HttpParams();
+    if (categoryId != null) params = params.set('categoryId', String(categoryId));
+    return this.http.get<AdminSubcategory[]>(`${API}/subcategories`, { params });
+  }
+
+  createSubcategory(body: Partial<AdminSubcategory>): Observable<AdminSubcategory> {
+    return this.http.post<AdminSubcategory>(`${API}/subcategories`, body);
+  }
+
+  updateSubcategory(id: number, body: Partial<AdminSubcategory>): Observable<AdminSubcategory> {
+    return this.http.put<AdminSubcategory>(`${API}/subcategories/${id}`, body);
+  }
+
+  deleteSubcategory(id: number): Observable<void> {
+    return this.http.delete<void>(`${API}/subcategories/${id}`);
+  }
 
   // Rules
   listRules(): Observable<any[]> { return this.http.get<any[]>(`${API}/rules`); }

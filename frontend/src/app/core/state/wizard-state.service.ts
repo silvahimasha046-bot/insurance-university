@@ -24,6 +24,7 @@ export interface WizardState {
   };
 
   step2?: {
+    age?: number;
     monthlyIncomeLkr?: number;
     monthlyExpensesLkr?: number;
     netWorthLkr?: number;
@@ -35,6 +36,9 @@ export interface WizardState {
     memberCount?: number;
     childrenAges?: string;
     protectionPurpose?: "SurvivorIncome" | "EducationFunding" | "RetirementSupplement" | "EstateLiquidity";
+    desiredPolicyTermYears?: number;
+    desiredSumAssured?: number;
+    preferredPaymentMode?: "Monthly" | "Quarterly" | "HalfYearly" | "Yearly" | "Single";
     prioritySafety?: number;
     priorityFlexibility?: number;
     priorityEquity?: number;
@@ -68,6 +72,15 @@ export interface WizardState {
     reasons?: string[];
   };
 
+  recommendationContext?: {
+    generatedAt?: string;
+    inferredCategory?: string;
+    inferredSubcategory?: string;
+    topPlanCodes?: string[];
+    followUpAnswers?: Record<string, unknown>;
+    followUpAskedCount?: number;
+  };
+
   documents?: {
     nicUploaded?: boolean;
     medicalUploaded?: boolean;
@@ -82,7 +95,7 @@ export interface WizardState {
   };
 }
 
-const STORAGE_KEY = "insurance_university_wizard_state_v1";
+const STORAGE_KEY = "insurance_university_wizard_state_v3";
 
 @Injectable({ providedIn: "root" })
 export class WizardStateService {
@@ -123,6 +136,15 @@ export class WizardStateService {
     this.setPartial({ selectedPlan: plan ?? undefined });
   }
 
+  setRecommendationContext(patch: WizardState["recommendationContext"]) {
+    this.setPartial({
+      recommendationContext: {
+        ...(this.state.recommendationContext ?? {}),
+        ...(patch ?? {}),
+      },
+    });
+  }
+
   setDocuments(patch: WizardState["documents"]) {
     this.setPartial({
       documents: { ...(this.state.documents ?? {}), ...(patch ?? {}) },
@@ -136,7 +158,7 @@ export class WizardStateService {
 
   private defaultState(): WizardState {
     return {
-      version: 1,
+      version: 3,
       updatedAt: new Date().toISOString(),
     };
   }
@@ -147,7 +169,7 @@ export class WizardStateService {
       if (!raw) return this.defaultState();
       const parsed = JSON.parse(raw) as WizardState;
 
-      if (!parsed || parsed.version !== 1) return this.defaultState();
+      if (!parsed || parsed.version !== 3) return this.defaultState();
       return { ...this.defaultState(), ...parsed };
     } catch {
       return this.defaultState();

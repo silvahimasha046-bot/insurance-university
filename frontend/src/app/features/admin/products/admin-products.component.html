@@ -1,0 +1,168 @@
+<div>
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-xl font-bold">Plans</h2>
+    <span class="text-sm text-gray-400">{{ products.length }} plan(s)</span>
+  </div>
+
+  <div *ngIf="successMsg" class="mb-4 bg-green-900/40 border border-green-700 text-green-300 px-4 py-2.5 rounded text-sm">
+    {{ successMsg }}
+  </div>
+  <div *ngIf="errorMsg" class="mb-4 bg-red-900/40 border border-red-700 text-red-300 px-4 py-2.5 rounded text-sm">
+    {{ errorMsg }}
+  </div>
+
+  <div class="bg-gray-800 rounded-lg p-5 mb-6 border border-gray-700">
+    <h3 class="font-semibold mb-4 text-sm uppercase text-gray-400 tracking-wider">
+      {{ editId ? 'Edit Plan' : 'Add New Plan' }}
+    </h3>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+      <div>
+        <label class="block text-xs text-gray-400 mb-1">Plan Code *</label>
+        <input [(ngModel)]="form.code" placeholder="e.g. ENDOWMENT"
+          class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm" />
+      </div>
+      <div>
+        <label class="block text-xs text-gray-400 mb-1">Plan Name *</label>
+        <input [(ngModel)]="form.name" placeholder="e.g. Endowment"
+          class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm" />
+      </div>
+      <div>
+        <label class="block text-xs text-gray-400 mb-1">Base Monthly Premium *</label>
+        <input [(ngModel)]="form.basePremium" type="number" min="0"
+          class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm" />
+      </div>
+      <div>
+        <label class="block text-xs text-gray-400 mb-1">Main Category *</label>
+        <select [(ngModel)]="form.categoryId" (ngModelChange)="onCategoryChange($event)"
+          class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+          <option [ngValue]="null">Select Category</option>
+          <option *ngFor="let c of categories" [ngValue]="c.id">{{ c.name }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs text-gray-400 mb-1">Subcategory</label>
+        <select [(ngModel)]="form.subcategoryId"
+          class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+          <option [ngValue]="null">Select Subcategory</option>
+          <option *ngFor="let s of visibleSubcategories" [ngValue]="s.id">{{ s.name }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs text-gray-400 mb-1">Min Age</label>
+        <input [(ngModel)]="form.minEligibleAge" type="number" min="0"
+          class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm" />
+      </div>
+      <div>
+        <label class="block text-xs text-gray-400 mb-1">Max Age</label>
+        <input [(ngModel)]="form.maxEligibleAge" type="number" min="0"
+          class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm" />
+      </div>
+      <div>
+        <label class="block text-xs text-gray-400 mb-1">Policy Term (min-max years)</label>
+        <div class="flex gap-2">
+          <input [(ngModel)]="form.minPolicyTermYears" type="number" min="0"
+            class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm" />
+          <input [(ngModel)]="form.maxPolicyTermYears" type="number" min="0"
+            class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm" />
+        </div>
+      </div>
+    </div>
+
+    <div class="mb-4">
+      <label class="block text-xs text-gray-400 mb-2">Tags</label>
+      <div class="flex flex-wrap gap-2">
+        <label *ngFor="let tag of commonTags" class="flex items-center gap-1.5 cursor-pointer">
+          <input type="checkbox" [checked]="selectedTags.has(tag.value)" (change)="toggleTag(tag.value)" class="accent-blue-500 w-4 h-4" />
+          <span class="text-sm text-gray-300">{{ tag.label }}</span>
+        </label>
+      </div>
+      <div class="flex gap-2 mt-3">
+        <input [(ngModel)]="customTagInput" placeholder="Add custom tag"
+          class="bg-gray-700 border border-gray-600 rounded px-3 py-1.5 text-sm w-56"
+          (keydown.enter)="addCustomTag()" />
+        <button (click)="addCustomTag()" class="px-3 py-1.5 bg-gray-600 rounded text-sm hover:bg-gray-500">+ Add</button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-4">
+      <div>
+        <label class="block text-xs text-gray-400 mb-1">How It Works</label>
+        <textarea [(ngModel)]="form.howItWorksText" rows="4" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm"></textarea>
+      </div>
+      <div>
+        <label class="block text-xs text-gray-400 mb-1">Additional Benefits</label>
+        <textarea [(ngModel)]="form.additionalBenefitsText" rows="4" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm"></textarea>
+      </div>
+      <div>
+        <label class="block text-xs text-gray-400 mb-1">Benefits JSON</label>
+        <textarea [(ngModel)]="form.benefitsJson" rows="4" placeholder='[{"title":"Protection Benefit"}]'
+          class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm font-mono"></textarea>
+      </div>
+      <div>
+        <label class="block text-xs text-gray-400 mb-1">Riders JSON</label>
+        <textarea [(ngModel)]="form.ridersJson" rows="4" placeholder='[{"name":"Family Protection Benefit"}]'
+          class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm font-mono"></textarea>
+      </div>
+      <div>
+        <label class="block text-xs text-gray-400 mb-1">Eligibility JSON</label>
+        <textarea [(ngModel)]="form.eligibilityJson" rows="3" placeholder='{"minAge":18,"maxAge":60}'
+          class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm font-mono"></textarea>
+      </div>
+      <div>
+        <label class="block text-xs text-gray-400 mb-1">Payment Modes JSON</label>
+        <textarea [(ngModel)]="form.paymentModesJson" rows="3" placeholder='["Monthly","Quarterly","Half-Yearly","Annual"]'
+          class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm font-mono"></textarea>
+      </div>
+      <div class="lg:col-span-2">
+        <label class="block text-xs text-gray-400 mb-1">Sample Calculations JSON</label>
+        <textarea [(ngModel)]="form.sampleCalculationsJson" rows="5" placeholder='[{"sumAssured":100000,"maturity":190000}]'
+          class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm font-mono"></textarea>
+      </div>
+    </div>
+
+    <div class="flex gap-2">
+      <button (click)="save()" [disabled]="!form.code || !form.name || !form.basePremium || !form.categoryId"
+        class="px-5 py-2 bg-blue-600 text-white rounded text-sm font-semibold hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed">
+        {{ editId ? 'Update Plan' : 'Add Plan' }}
+      </button>
+      <button *ngIf="editId" (click)="cancelEdit()" class="px-4 py-2 bg-gray-600 text-white rounded text-sm hover:bg-gray-500">
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <div class="overflow-x-auto rounded-lg border border-gray-700">
+    <table class="w-full text-sm text-left">
+      <thead class="text-xs text-gray-400 uppercase bg-gray-800">
+        <tr>
+          <th class="px-4 py-3">Code</th>
+          <th class="px-4 py-3">Name</th>
+          <th class="px-4 py-3">Hierarchy</th>
+          <th class="px-4 py-3">Base Premium</th>
+          <th class="px-4 py-3">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let p of products" class="border-t border-gray-700 hover:bg-gray-800">
+          <td class="px-4 py-3 font-mono text-xs text-blue-400">{{ p.code }}</td>
+          <td class="px-4 py-3 font-medium">{{ p.name }}</td>
+          <td class="px-4 py-3 text-xs text-gray-300">
+            <div>{{ p.category?.name || 'Unassigned' }}</div>
+            <div class="text-gray-500">{{ p.subcategory?.name || 'No subcategory' }}</div>
+          </td>
+          <td class="px-4 py-3 text-gray-300">LKR {{ p.basePremium | number:'1.0-0' }}</td>
+          <td class="px-4 py-3">
+            <div class="flex gap-3">
+              <button (click)="edit(p)" class="text-blue-400 hover:text-blue-300 text-xs font-semibold">Edit</button>
+              <button (click)="remove(p.id || 0)" class="text-red-400 hover:text-red-300 text-xs font-semibold">Delete</button>
+            </div>
+          </td>
+        </tr>
+        <tr *ngIf="products.length === 0">
+          <td colspan="5" class="px-4 py-8 text-center text-gray-500">No plans yet. Add your first plan above.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

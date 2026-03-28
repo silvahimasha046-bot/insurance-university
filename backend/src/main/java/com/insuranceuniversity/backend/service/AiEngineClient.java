@@ -5,17 +5,21 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 public class AiEngineClient {
@@ -24,10 +28,14 @@ public class AiEngineClient {
 
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
+    private final String aiEngineBaseUrl;
 
     public AiEngineClient(
             @Value("${app.aiEngineUrl:http://localhost:8000}") String aiEngineUrl,
             ObjectMapper objectMapper) {
+        this.aiEngineBaseUrl = (aiEngineUrl == null || aiEngineUrl.isBlank())
+            ? "http://localhost:8000"
+            : aiEngineUrl.replaceAll("/+$", "");
         this.restClient = RestClient.builder().baseUrl(aiEngineUrl).build();
         this.objectMapper = objectMapper;
     }
@@ -44,15 +52,30 @@ public class AiEngineClient {
         );
 
         try {
+            String requestJson = objectMapper.writeValueAsString(requestBody);
             log.info("Calling AI engine /score for session={}", sessionId);
             String responseBody = restClient.post()
                     .uri("/score")
-                    .header("Content-Type", "application/json")
-                    .body(requestBody)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .accept(MediaType.APPLICATION_JSON)
+                    .body(requestJson)
                     .retrieve()
                     .body(String.class);
 
             return objectMapper.readValue(responseBody, Map.class);
+        } catch (HttpClientErrorException.UnprocessableEntity e) {
+            log.warn("AI engine /score returned 422 for session={}, retrying with raw JSON request. body={} ",
+                    sessionId, e.getResponseBodyAsString());
+            try {
+                String responseBody = scoreRawJson(requestBody);
+                return objectMapper.readValue(responseBody, Map.class);
+            } catch (JsonProcessingException ex) {
+                log.error("Failed to parse AI engine /score fallback response", ex);
+                throw new RuntimeException("AI engine score response parsing failed", ex);
+            } catch (IOException ex) {
+                log.error("AI engine /score fallback call failed for session={}", sessionId, ex);
+                throw new RuntimeException("AI engine score fallback unavailable: " + ex.getMessage(), ex);
+            }
         } catch (JsonProcessingException e) {
             log.error("Failed to parse AI engine response", e);
             throw new RuntimeException("AI engine response parsing failed", e);
@@ -83,25 +106,29 @@ public class AiEngineClient {
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, Object> trainBytes(byte[] bytes, String filename) throws IOException {
-
-        ByteArrayResource resource = new ByteArrayResource(bytes) {
-            @Override
-            public String getFilename() { return filename; }
-        };
-
-        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("file", resource);
-
+    public Map<String, Object> activateModel(String artifactId) {
         try {
-            log.info("Calling AI engine /train with file={}", filename);
+            log.info("Calling AI engine /models/{}/activate", artifactId);
             String responseBody = restClient.post()
-                    .uri("/train")
-                    .contentType(MediaType.MULTIPART_FORM_DATA)
-                    .body(body)
+                    .uri("/models/{artifactId}/activate", artifactId)
                     .retrieve()
                     .body(String.class);
 
+            return objectMapper.readValue(responseBody, Map.class);
+        } catch (JsonProcessingException e) {
+            log.error("Failed to parse AI engine activate response", e);
+            throw new RuntimeException("AI engine activate response parsing failed", e);
+        } catch (Exception e) {
+            log.error("AI engine model activation failed for artifactId={}", artifactId, e);
+            throw new RuntimeException("AI engine model activation unavailable: " + e.getMessage(), e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> trainBytes(byte[] bytes, String filename) throws IOException {
+        try {
+            log.info("Calling AI engine /train with file={}", filename);
+            String responseBody = trainBytesRawMultipart(bytes, filename);
             return objectMapper.readValue(responseBody, Map.class);
         } catch (JsonProcessingException e) {
             log.error("Failed to parse AI engine train response", e);
@@ -109,6 +136,75 @@ public class AiEngineClient {
         } catch (Exception e) {
             log.error("AI engine /train call failed", e);
             throw new RuntimeException("AI engine train unavailable: " + e.getMessage(), e);
+        }
+    }
+
+    private String trainBytesRawMultipart(byte[] bytes, String filename) throws IOException {
+        String boundary = "----InsuranceBoundary" + UUID.randomUUID();
+        URL url = new URL(aiEngineBaseUrl + "/train");
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("POST");
+        connection.setDoOutput(true);
+        connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+
+        String safeFilename = (filename == null || filename.isBlank())
+                ? "dataset.csv"
+                : filename.replace("\"", "");
+
+        try (OutputStream out = connection.getOutputStream()) {
+            out.write(("--" + boundary + "\r\n").getBytes(StandardCharsets.UTF_8));
+            out.write(("Content-Disposition: form-data; name=\"file\"; filename=\"" + safeFilename + "\"\r\n")
+                    .getBytes(StandardCharsets.UTF_8));
+            out.write("Content-Type: text/csv\r\n\r\n".getBytes(StandardCharsets.UTF_8));
+            out.write(bytes);
+            out.write("\r\n".getBytes(StandardCharsets.UTF_8));
+            out.write(("--" + boundary + "--\r\n").getBytes(StandardCharsets.UTF_8));
+        }
+
+        int status = connection.getResponseCode();
+        try (InputStream stream = status >= 200 && status < 300
+                ? connection.getInputStream()
+                : connection.getErrorStream()) {
+            String responseBody = stream != null
+                    ? new String(stream.readAllBytes(), StandardCharsets.UTF_8)
+                    : "";
+
+            if (status < 200 || status >= 300) {
+                throw new RuntimeException("AI engine /train failed with HTTP " + status + ": " + responseBody);
+            }
+            return responseBody;
+        } finally {
+            connection.disconnect();
+        }
+    }
+
+    private String scoreRawJson(Map<String, Object> requestBody) throws IOException {
+        URL url = new URL(aiEngineBaseUrl + "/score");
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("POST");
+        connection.setDoOutput(true);
+        connection.setRequestProperty("Content-Type", "application/json");
+        connection.setRequestProperty("Accept", "application/json");
+
+        byte[] payload = objectMapper.writeValueAsBytes(requestBody);
+        try (OutputStream out = connection.getOutputStream()) {
+            out.write(payload);
+        }
+
+        int status = connection.getResponseCode();
+        try (InputStream stream = status >= 200 && status < 300
+                ? connection.getInputStream()
+                : connection.getErrorStream()) {
+            String responseBody = stream != null
+                    ? new String(stream.readAllBytes(), StandardCharsets.UTF_8)
+                    : "";
+
+            if (status < 200 || status >= 300) {
+                throw new RuntimeException("AI engine /score failed with HTTP " + status + ": " + responseBody);
+            }
+            return responseBody;
+        } finally {
+            connection.disconnect();
         }
     }
 }

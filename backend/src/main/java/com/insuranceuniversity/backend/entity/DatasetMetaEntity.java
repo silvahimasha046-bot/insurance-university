@@ -14,6 +14,9 @@ public class DatasetMetaEntity {
     private String originalFilename;
     private String storedPath;
     private Long fileSize;
+    private String formatVersion;
+    private String trainingGoal;
+    private String latestModelArtifactId;
     private LocalDateTime uploadedAt;
 
     @PrePersist
@@ -29,6 +32,12 @@ public class DatasetMetaEntity {
     public void setStoredPath(String storedPath) { this.storedPath = storedPath; }
     public Long getFileSize() { return fileSize; }
     public void setFileSize(Long fileSize) { this.fileSize = fileSize; }
+    public String getFormatVersion() { return formatVersion; }
+    public void setFormatVersion(String formatVersion) { this.formatVersion = formatVersion; }
+    public String getTrainingGoal() { return trainingGoal; }
+    public void setTrainingGoal(String trainingGoal) { this.trainingGoal = trainingGoal; }
+    public String getLatestModelArtifactId() { return latestModelArtifactId; }
+    public void setLatestModelArtifactId(String latestModelArtifactId) { this.latestModelArtifactId = latestModelArtifactId; }
     public LocalDateTime getUploadedAt() { return uploadedAt; }
     public void setUploadedAt(LocalDateTime uploadedAt) { this.uploadedAt = uploadedAt; }
 }

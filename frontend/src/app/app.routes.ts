@@ -128,6 +128,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: "categories",
+        loadComponent: () =>
+          import("./features/admin/categories/admin-categories.component").then(
+            (m) => m.AdminCategoriesComponent
+          ),
+      },
+      {
         path: "products",
         loadComponent: () =>
           import("./features/admin/products/admin-products.component").then(

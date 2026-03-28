@@ -18,11 +18,40 @@ export interface RankedProduct {
   predictedCoverage?: number;
   suitabilityRank?: number;
   riderExclusions?: string[];
+  category?: string;
+  subCategory?: string;
+  productMetadata?: {
+    category?: string;
+    subCategory?: string;
+    benefits?: Array<Record<string, unknown>>;
+    riders?: Array<Record<string, unknown>>;
+    eligibility?: Record<string, unknown>;
+    sampleCalculations?: Array<Record<string, unknown>>;
+    paymentModes?: string[];
+    howItWorks?: string;
+    additionalBenefits?: string;
+    minEligibleAge?: number;
+    maxEligibleAge?: number;
+    minPolicyTermYears?: number;
+    maxPolicyTermYears?: number;
+  };
+}
+
+export interface FollowUpQuestion {
+  id: string;
+  key: string;
+  question: string;
+  type: "text" | "number" | "boolean" | "select";
+  required?: boolean;
+  reason?: string;
+  options?: string[];
+  relatedPlans?: string[];
 }
 
 export interface RecommendationResponse {
   sessionId: string;
   rankedProducts: RankedProduct[];
+  followUpQuestions?: FollowUpQuestion[];
 }
 
 @Injectable({ providedIn: "root" })

@@ -200,3 +200,51 @@ Then pass the token as `Authorization: Bearer <token>` for all `/api/admin/**` r
 | `SPRING_DATASOURCE_USERNAME` | `root` | MySQL user |
 | `SPRING_DATASOURCE_PASSWORD` | `root` | MySQL password |
 
+---
+
+## MCP Setup (Workspace)
+
+This repository includes a versioned VS Code workspace file with recommended MCP servers:
+
+- `git` for repository-aware context and history
+- `mysql` for local database schema/data exploration
+- `fetch` for API/health endpoint inspection
+
+Workspace file:
+
+- `insurance-university.code-workspace`
+
+### Open with MCP enabled
+
+1. In VS Code, open the workspace file instead of only the folder.
+2. Confirm MCP servers appear in the MCP Servers view.
+3. If prompted, allow `npx` to install MCP server packages.
+
+### MCP smoke checks
+
+Use Copilot Chat prompts such as:
+
+- "Using mysql MCP, list all tables in insurance_university"
+- "Using fetch MCP, get http://localhost:8000/health"
+- "Using fetch MCP, get http://localhost:8080/api/auth/me"
+- "Using git MCP, show current branch and changed files"
+
+Expected note: `/api/auth/me` should return unauthorized without a token; this still confirms the backend is reachable.
+
+### Hardening follow-up (recommended)
+
+The workspace defaults use local dev credentials (`root` / `root`) for quick startup. For safer non-dev usage:
+
+1. Create a least-privilege read-only MySQL user for MCP queries.
+2. Replace root credentials in workspace settings with that user.
+3. Restrict fetch MCP use to local/internal endpoints only.
+4. Rotate passwords regularly and avoid committing secrets for shared environments.
+
+Example MySQL user creation:
+
+```sql
+CREATE USER 'mcp_reader'@'localhost' IDENTIFIED BY 'change_me_now';
+GRANT SELECT, SHOW VIEW ON insurance_university.* TO 'mcp_reader'@'localhost';
+FLUSH PRIVILEGES;
+```
+

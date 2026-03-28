@@ -84,12 +84,56 @@
         <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Financial Summary</p>
         <div class="space-y-1 text-sm">
           <div class="flex justify-between">
+            <span class="text-slate-500">Age</span>
+            <span class="font-medium">{{ step2.age || '-' }}</span>
+          </div>
+          <div class="flex justify-between">
             <span class="text-slate-500">Monthly Income</span>
             <span class="font-medium">LKR {{ step2.monthlyIncomeLkr | number:'1.0-0' }}</span>
           </div>
           <div *ngIf="step2.recommendedCoverageLkr" class="flex justify-between">
             <span class="text-slate-500">Recommended Coverage</span>
             <span class="font-medium">LKR {{ step2.recommendedCoverageLkr | number:'1.0-0' }}</span>
+          </div>
+          <div *ngIf="step2.desiredPolicyTermYears" class="flex justify-between">
+            <span class="text-slate-500">Desired Policy Term</span>
+            <span class="font-medium">{{ step2.desiredPolicyTermYears }} years</span>
+          </div>
+          <div *ngIf="step2.desiredSumAssured" class="flex justify-between">
+            <span class="text-slate-500">Desired Sum Assured</span>
+            <span class="font-medium">LKR {{ step2.desiredSumAssured | number:'1.0-0' }}</span>
+          </div>
+          <div *ngIf="step2.preferredPaymentMode" class="flex justify-between">
+            <span class="text-slate-500">Preferred Payment Mode</span>
+            <span class="font-medium">{{ step2.preferredPaymentMode }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="recommendationContext" class="mb-4">
+        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Recommendation Context</p>
+        <div class="space-y-1 text-sm">
+          <div class="flex justify-between" *ngIf="recommendationContext.inferredCategory">
+            <span class="text-slate-500">Category</span>
+            <span class="font-medium">{{ recommendationContext.inferredCategory }}</span>
+          </div>
+          <div class="flex justify-between" *ngIf="recommendationContext.inferredSubcategory">
+            <span class="text-slate-500">Subcategory</span>
+            <span class="font-medium">{{ recommendationContext.inferredSubcategory }}</span>
+          </div>
+          <div class="flex justify-between" *ngIf="recommendationContext.followUpAskedCount !== undefined">
+            <span class="text-slate-500">Additional Questions Asked</span>
+            <span class="font-medium">{{ recommendationContext.followUpAskedCount }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="followUpAnswerEntries.length > 0" class="mb-4">
+        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Additional Answers</p>
+        <div class="space-y-1 text-sm">
+          <div class="flex justify-between" *ngFor="let item of followUpAnswerEntries">
+            <span class="text-slate-500">{{ item.label }}</span>
+            <span class="font-medium text-right max-w-[55%]">{{ item.value }}</span>
           </div>
         </div>
       </div>

@@ -1,0 +1,43 @@
+{
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "settings": {
+    "mcp": {
+      "servers": {
+        "git": {
+          "command": "npx",
+          "args": [
+            "-y",
+            "@modelcontextprotocol/server-git",
+            "--repository",
+            "."
+          ]
+        },
+        "mysql": {
+          "command": "npx",
+          "args": [
+            "-y",
+            "@modelcontextprotocol/server-mysql"
+          ],
+          "env": {
+            "MYSQL_HOST": "127.0.0.1",
+            "MYSQL_PORT": "3306",
+            "MYSQL_USER": "root",
+            "MYSQL_PASSWORD": "root",
+            "MYSQL_DATABASE": "insurance_university"
+          }
+        },
+        "fetch": {
+          "command": "npx",
+          "args": [
+            "-y",
+            "@modelcontextprotocol/server-fetch"
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,10 +1,10 @@
 <div>
   <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold">AI Model Training</h1>
+    <h1 class="text-2xl font-bold">Policy Prediction Training</h1>
     <button (click)="downloadTemplate()"
             class="flex items-center gap-1.5 text-sm text-blue-400 hover:text-blue-300 border border-blue-700 px-3 py-1.5 rounded transition-colors">
       <span class="material-symbols-outlined text-base">download</span>
-      Download CSV Template
+      Download Policy Dataset Template
     </button>
   </div>
 
@@ -24,8 +24,26 @@
       <span class="text-gray-400 text-sm">— {{ trainResultDatasetName }}</span>
     </div>
     <p class="text-sm text-gray-300 mb-1">{{ lastTrainResult.message }}</p>
-    <p class="text-sm text-gray-400 mb-3">
-      <span class="font-semibold text-white">{{ lastTrainResult.rowsProcessed }}</span> rows processed
+    <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 mb-3">
+      <div class="rounded border border-green-800/70 bg-slate-900/40 px-3 py-2">
+        <p class="text-[11px] uppercase tracking-wide text-slate-400">Rows Processed</p>
+        <p class="text-sm font-semibold text-white">{{ lastTrainResult.rowsProcessed }}</p>
+      </div>
+      <div class="rounded border border-green-800/70 bg-slate-900/40 px-3 py-2">
+        <p class="text-[11px] uppercase tracking-wide text-slate-400">Rows Skipped</p>
+        <p class="text-sm font-semibold text-white">{{ lastTrainResult.skippedRows || 0 }}</p>
+      </div>
+      <div class="rounded border border-green-800/70 bg-slate-900/40 px-3 py-2">
+        <p class="text-[11px] uppercase tracking-wide text-slate-400">Model Artifact</p>
+        <p class="text-sm font-semibold text-white break-all">{{ lastTrainResult.modelArtifactId || '—' }}</p>
+      </div>
+      <div class="rounded border border-green-800/70 bg-slate-900/40 px-3 py-2">
+        <p class="text-[11px] uppercase tracking-wide text-slate-400">Format</p>
+        <p class="text-sm font-semibold text-white">{{ lastTrainResult.trainingFormat || 'policy-recommendation-v2' }}</p>
+      </div>
+    </div>
+    <p *ngIf="lastTrainResult.modelName" class="text-sm text-gray-400 mb-3">
+      Generated model: <span class="font-medium text-white">{{ lastTrainResult.modelName }}</span>
     </p>
 
     <!-- Updated weights table -->
@@ -43,11 +61,17 @@
 
   <!-- Dataset Upload -->
   <section class="mb-8">
-    <h2 class="text-lg font-semibold mb-3">Upload Training Dataset</h2>
+    <h2 class="text-lg font-semibold mb-3">Upload Policy Outcome Dataset</h2>
     <p class="text-sm text-gray-400 mb-3">
-      Upload a CSV file to train the AI scoring model. The file triggers immediate re-training of the AI engine weights.
-      Required columns: <code class="text-blue-300 bg-gray-800 px-1 rounded">age, smoker, income, outcome_score</code>
-      (others are optional).
+      Upload a CSV file where each row describes a customer profile, the policy that was recommended, and the resulting
+      recommendation outcome. Each successful training run creates a new AI model artifact. Promote a model below to make
+      future predictions use that trained policy dataset.
+    </p>
+    <p class="text-sm text-gray-400 mb-3">
+      Required columns:
+      <code class="text-blue-300 bg-gray-800 px-1 rounded">product_code, category_code, subcategory_code, policy_type, eligibility, outcome_score, age, smoker, income, monthlyExpensesLkr, netWorthLkr, conditions_count</code>
+      Optional supporting columns include <code class="text-blue-300 bg-gray-800 px-1 rounded">children_count, children_ages_csv, dependents, protection_purpose, desiredPolicyTermYears, desiredSumAssured, preferredPaymentMode</code>.
+      Legacy CSV formats are not accepted in this version.
     </p>
 
     <div class="bg-gray-800 p-4 rounded border border-gray-700 mb-4 flex items-center gap-3 flex-wrap">
@@ -66,6 +90,7 @@
           <tr>
             <th class="text-left px-4 py-2">ID</th>
             <th class="text-left px-4 py-2">Filename</th>
+            <th class="text-left px-4 py-2">Format</th>
             <th class="text-left px-4 py-2">Size</th>
             <th class="text-left px-4 py-2">Uploaded</th>
             <th class="px-4 py-2"></th>
@@ -75,6 +100,7 @@
           <tr *ngFor="let d of datasets" class="border-t border-gray-700 hover:bg-gray-800 transition-colors">
             <td class="px-4 py-2 text-gray-500">{{ d.id }}</td>
             <td class="px-4 py-2 font-medium">{{ d.originalFilename }}</td>
+            <td class="px-4 py-2 text-gray-400">{{ d.formatVersion || 'policy-recommendation-v2' }}</td>
             <td class="px-4 py-2 text-gray-400">{{ d.fileSize | number }} bytes</td>
             <td class="px-4 py-2 text-gray-400">{{ d.uploadedAt | date:'short' }}</td>
             <td class="px-4 py-2 text-right">
@@ -89,7 +115,7 @@
             </td>
           </tr>
           <tr *ngIf="datasets.length === 0">
-            <td colspan="5" class="px-4 py-6 text-center text-gray-500">
+            <td colspan="6" class="px-4 py-6 text-center text-gray-500">
               No datasets yet. Upload your first CSV above.
             </td>
           </tr>
@@ -102,23 +128,9 @@
   <section>
     <h2 class="text-lg font-semibold mb-3">Model Versions</h2>
     <p class="text-sm text-gray-400 mb-3">
-      Track model versions and promote one as active. The Spring Boot backend uses the active model reference
-      when calling the AI engine.
+      Each successful training run creates a stored model artifact. Set one model as active to make the AI engine use it
+      for future policy predictions, even after the AI service restarts.
     </p>
-
-    <div class="bg-gray-800 p-4 rounded border border-gray-700 mb-4">
-      <h3 class="text-sm font-medium text-gray-300 mb-2">Register New Model Version</h3>
-      <div class="flex gap-2 flex-wrap">
-        <input [(ngModel)]="newModel.name" placeholder="Version name (e.g. v2.0)"
-               class="bg-gray-700 text-white rounded px-3 py-1.5 text-sm flex-1 min-w-32 border border-gray-600 focus:border-blue-500 focus:outline-none" />
-        <input [(ngModel)]="newModel.description" placeholder="Description (e.g. trained with 500 rows)"
-               class="bg-gray-700 text-white rounded px-3 py-1.5 text-sm flex-1 min-w-48 border border-gray-600 focus:border-blue-500 focus:outline-none" />
-        <button (click)="createModel()" [disabled]="!newModel.name"
-                class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm px-4 py-1.5 rounded transition-colors">
-          Create
-        </button>
-      </div>
-    </div>
 
     <div class="overflow-x-auto rounded-lg border border-gray-700">
       <table class="w-full text-sm">
@@ -126,7 +138,9 @@
           <tr>
             <th class="text-left px-4 py-2">ID</th>
             <th class="text-left px-4 py-2">Name</th>
-            <th class="text-left px-4 py-2">Description</th>
+            <th class="text-left px-4 py-2">Artifact</th>
+            <th class="text-left px-4 py-2">Rows</th>
+            <th class="text-left px-4 py-2">Format</th>
             <th class="text-left px-4 py-2">Created</th>
             <th class="text-left px-4 py-2">Status</th>
             <th class="px-4 py-2"></th>
@@ -136,7 +150,9 @@
           <tr *ngFor="let m of models" class="border-t border-gray-700 hover:bg-gray-800 transition-colors">
             <td class="px-4 py-2 text-gray-500">{{ m.id }}</td>
             <td class="px-4 py-2 font-medium">{{ m.name }}</td>
-            <td class="px-4 py-2 text-gray-400">{{ m.description || '—' }}</td>
+            <td class="px-4 py-2 text-gray-400 break-all">{{ m.artifactId || '—' }}</td>
+            <td class="px-4 py-2 text-gray-400">{{ m.rowsProcessed ?? '—' }}</td>
+            <td class="px-4 py-2 text-gray-400">{{ m.trainingFormat || 'policy-recommendation-v2' }}</td>
             <td class="px-4 py-2 text-gray-400">{{ m.createdAt | date:'short' }}</td>
             <td class="px-4 py-2">
               <span [class]="m.active
@@ -153,7 +169,7 @@
             </td>
           </tr>
           <tr *ngIf="models.length === 0">
-            <td colspan="6" class="px-4 py-6 text-center text-gray-500">
+            <td colspan="8" class="px-4 py-6 text-center text-gray-500">
               No model versions yet.
             </td>
           </tr>

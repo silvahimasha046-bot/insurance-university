@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminApiService } from '../admin-api.service';
@@ -16,7 +16,10 @@ export class AdminRulesComponent implements OnInit {
   newRule = { name: '', ruleJson: '{}', version: 1 };
   newPricing = { name: '', pricingJson: '{}', version: 1 };
 
-  constructor(private api: AdminApiService) {}
+  constructor(
+    private api: AdminApiService,
+    private cd: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadRules();
@@ -24,7 +27,16 @@ export class AdminRulesComponent implements OnInit {
   }
 
   loadRules(): void {
-    this.api.listRules().subscribe(r => (this.rules = r));
+    this.api.listRules().subscribe({
+      next: (r) => {
+        this.rules = r;
+        this.cd.detectChanges();
+      },
+      error: () => this.showError('Failed to load rules.'),
+    });
+  }
+  showError(message: string): void {
+    throw new Error('Method not implemented.');
   }
 
   createRule(): void {
@@ -39,7 +51,13 @@ export class AdminRulesComponent implements OnInit {
   }
 
   loadPricing(): void {
-    this.api.listPricingTables().subscribe(p => (this.pricingTables = p));
+    this.api.listPricingTables().subscribe({
+      next: (r) => {
+        this.pricingTables = r;
+        this.cd.detectChanges();
+      },
+      error: () => this.showError('Failed to load pricing tables.'),
+    });
   }
 
   createPricing(): void {

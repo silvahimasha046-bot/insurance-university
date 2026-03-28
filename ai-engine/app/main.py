@@ -1,19 +1,39 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Any, Optional
 import logging
 import csv
 import io
+import json
+from datetime import datetime, timezone
+from pathlib import Path
+from uuid import uuid4
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Insurance AI Engine", version="2.0.0")
 
+TRAINING_FORMAT_VERSION = "policy-recommendation-v2"
+REQUIRED_TRAIN_COLUMNS = {
+    "product_code",
+    "category_code",
+    "subcategory_code",
+    "policy_type",
+    "eligibility",
+    "outcome_score",
+    "age",
+    "smoker",
+    "income",
+    "monthlyexpenseslkr",
+    "networthlkr",
+    "conditions_count",
+}
+
 # ---------------------------------------------------------------------------
 # In-memory feature weights — updated via /train
 # ---------------------------------------------------------------------------
-_weights: dict[str, float] = {
+DEFAULT_WEIGHTS: dict[str, float] = {
     "age_young_boost":          0.10,
     "age_old_penalty":          0.15,
     "smoker_penalty":           0.20,
@@ -38,6 +58,19 @@ _weights: dict[str, float] = {
     "family_history_penalty":   0.05,
 }
 
+APP_ROOT = Path(__file__).resolve().parent.parent
+MODEL_STORE_DIR = APP_ROOT / "data" / "models"
+ACTIVE_MODEL_FILE = MODEL_STORE_DIR / "active_model.json"
+
+_weights: dict[str, float] = dict(DEFAULT_WEIGHTS)
+_policy_adjustments: dict[str, dict[str, dict[str, Any]]] = {
+    "products": {},
+    "categories": {},
+    "subcategories": {},
+    "policyTypes": {},
+}
+_active_model_meta: Optional[dict[str, Any]] = None
+
 # ---------------------------------------------------------------------------
 # Maximum cap on life coverage (system-defined scheme limit)
 # ---------------------------------------------------------------------------
@@ -45,6 +78,10 @@ MAX_COVERAGE_LKR = 50_000_000  # Rs. 50 million
 
 # Affordability threshold: premium must not exceed this fraction of disposable income
 AFFORDABILITY_THRESHOLD = 0.20
+
+# Follow-up prompts become stricter when recommendation confidence is low.
+FOLLOW_UP_CONFIDENCE_THRESHOLD = 0.62
+FOLLOW_UP_SCORE_GAP_THRESHOLD = 0.12
 
 
 # ---------------------------------------------------------------------------
@@ -55,7 +92,22 @@ class Product(BaseModel):
     code: str
     name: str
     basePremium: float
-    tags: Optional[list[str]] = []
+    tags: list[str] = Field(default_factory=list)
+    category: Optional[str] = None
+    categoryCode: Optional[str] = None
+    subCategory: Optional[str] = None
+    subCategoryCode: Optional[str] = None
+    benefits: Optional[list[dict[str, Any]]] = None
+    riders: Optional[list[dict[str, Any]]] = None
+    eligibility: Optional[dict[str, Any]] = None
+    sampleCalculations: Optional[list[dict[str, Any]]] = None
+    paymentModes: Optional[list[str]] = None
+    howItWorks: Optional[str] = None
+    additionalBenefits: Optional[str] = None
+    minEligibleAge: Optional[int] = None
+    maxEligibleAge: Optional[int] = None
+    minPolicyTermYears: Optional[int] = None
+    maxPolicyTermYears: Optional[int] = None
 
 
 class ScoreRequest(BaseModel):
@@ -77,17 +129,262 @@ class RankedProduct(BaseModel):
     predictedCoverage: float
     suitabilityRank: int
     riderExclusions: list[str]
+    category: Optional[str] = None
+    subCategory: Optional[str] = None
+    productMetadata: Optional[dict[str, Any]] = None
+
+
+class FollowUpQuestion(BaseModel):
+    id: str
+    key: str
+    question: str
+    type: str  # text | number | boolean | select
+    required: bool = True
+    reason: Optional[str] = None
+    options: list[str] = Field(default_factory=list)
+    relatedPlans: list[str] = Field(default_factory=list)
 
 
 class ScoreResponse(BaseModel):
     sessionId: str
     rankedProducts: list[RankedProduct]
+    followUpQuestions: list[FollowUpQuestion] = Field(default_factory=list)
 
 
 class TrainResponse(BaseModel):
     message: str
     rowsProcessed: int
     updatedWeights: dict[str, float]
+    skippedRows: int = 0
+    modelArtifactId: str
+    modelName: str
+    trainingFormat: str
+
+
+class ModelActivationResponse(BaseModel):
+    message: str
+    artifactId: str
+    modelName: str
+
+
+def _default_policy_adjustments() -> dict[str, dict[str, dict[str, Any]]]:
+    return {
+        "products": {},
+        "categories": {},
+        "subcategories": {},
+        "policyTypes": {},
+        "childrenCountBuckets": {},
+        "childrenAgeBuckets": {},
+        "educationPurpose": {},
+    }
+
+
+def _ensure_model_store() -> None:
+    MODEL_STORE_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _artifact_path(artifact_id: str) -> Path:
+    return MODEL_STORE_DIR / f"{artifact_id}.json"
+
+
+def _normalize_key(value: Any, uppercase: bool = False) -> str:
+    text = str(value or "").strip()
+    return text.upper() if uppercase else text.lower()
+
+
+def _average(values: list[float]) -> float:
+    return sum(values) / len(values) if values else 0.0
+
+
+def _summarize_adjustments(grouped_scores: dict[str, list[float]], overall_avg: float) -> dict[str, dict[str, Any]]:
+    summary: dict[str, dict[str, Any]] = {}
+    for key, scores in grouped_scores.items():
+        if not key or not scores:
+            continue
+        avg_outcome = round(_average(scores), 4)
+        summary[key] = {
+            "avgOutcome": avg_outcome,
+            "sampleCount": len(scores),
+            "delta": round(max(min(avg_outcome - overall_avg, 0.25), -0.25), 4),
+        }
+    return summary
+
+
+def _persist_model_artifact(artifact: dict[str, Any]) -> None:
+    _ensure_model_store()
+    _artifact_path(artifact["artifactId"]).write_text(json.dumps(artifact, indent=2), encoding="utf-8")
+
+
+def _load_model_artifact(artifact_id: str) -> dict[str, Any]:
+    artifact_file = _artifact_path(artifact_id)
+    if not artifact_file.exists():
+        raise HTTPException(status_code=404, detail=f"Model artifact '{artifact_id}' not found")
+    return json.loads(artifact_file.read_text(encoding="utf-8"))
+
+
+def _apply_model_artifact(artifact: dict[str, Any], persist_active: bool = False) -> None:
+    global _weights, _policy_adjustments, _active_model_meta
+
+    _weights = dict(DEFAULT_WEIGHTS)
+    _weights.update({k: float(v) for k, v in artifact.get("weights", {}).items()})
+    _policy_adjustments = _default_policy_adjustments()
+    for group_name, group_values in artifact.get("policyAdjustments", {}).items():
+        if group_name in _policy_adjustments and isinstance(group_values, dict):
+            _policy_adjustments[group_name] = group_values
+
+    _active_model_meta = {
+        "artifactId": artifact.get("artifactId"),
+        "modelName": artifact.get("modelName", "Unnamed Model"),
+        "trainedAt": artifact.get("trainedAt"),
+        "trainingFormat": artifact.get("trainingFormat", TRAINING_FORMAT_VERSION),
+    }
+
+    if persist_active:
+        _ensure_model_store()
+        ACTIVE_MODEL_FILE.write_text(
+            json.dumps(
+                {
+                    "artifactId": artifact.get("artifactId"),
+                    "modelName": artifact.get("modelName", "Unnamed Model"),
+                    "trainedAt": artifact.get("trainedAt"),
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
+
+def _initialize_active_model() -> None:
+    global _weights, _policy_adjustments, _active_model_meta
+
+    _ensure_model_store()
+    _weights = dict(DEFAULT_WEIGHTS)
+    _policy_adjustments = _default_policy_adjustments()
+    _active_model_meta = {
+        "artifactId": "default-heuristic-model",
+        "modelName": "Default Heuristic Model",
+        "trainedAt": None,
+        "trainingFormat": "built-in-default",
+    }
+
+    if not ACTIVE_MODEL_FILE.exists():
+        return
+
+    try:
+        active_ref = json.loads(ACTIVE_MODEL_FILE.read_text(encoding="utf-8"))
+        artifact_id = active_ref.get("artifactId")
+        if artifact_id:
+            _apply_model_artifact(_load_model_artifact(artifact_id), persist_active=False)
+            logger.info("Loaded active AI model artifact=%s", artifact_id)
+    except Exception as exc:
+        logger.warning("Failed to load active AI model. Using defaults. error=%s", exc)
+
+
+@app.on_event("startup")
+def on_startup() -> None:
+    _initialize_active_model()
+
+
+def _parse_children_ages(value: Any) -> list[int]:
+    if value is None:
+        return []
+    raw = str(value).strip()
+    if not raw or raw.upper() == "NONE":
+        return []
+
+    normalized = raw.replace("|", ",")
+    ages: list[int] = []
+    for token in normalized.split(","):
+        piece = token.strip()
+        if not piece:
+            continue
+        if piece.lstrip("-").isdigit():
+            age = int(piece)
+            if 0 <= age <= 30:
+                ages.append(age)
+    return ages
+
+
+def _children_count_bucket(count: int) -> str:
+    if count <= 0:
+        return "0"
+    if count == 1:
+        return "1"
+    if count == 2:
+        return "2"
+    return "3+"
+
+
+def _children_age_buckets(ages: list[int]) -> set[str]:
+    buckets: set[str] = set()
+    for age in ages:
+        if age <= 5:
+            buckets.add("0-5")
+        elif age <= 12:
+            buckets.add("6-12")
+        elif age <= 17:
+            buckets.add("13-17")
+        else:
+            buckets.add("18+")
+    return buckets
+
+
+def _learned_policy_adjustment(product: Product, policy_type: str, features: dict[str, Any]) -> tuple[float, list[str]]:
+    adjustments: list[float] = []
+    reasons: list[str] = []
+
+    product_code = _normalize_key(product.code, uppercase=True)
+    category_code = _normalize_key(product.categoryCode, uppercase=True)
+    subcategory_code = _normalize_key(product.subCategoryCode, uppercase=True)
+    policy_type_key = _normalize_key(policy_type)
+
+    exact_product = _policy_adjustments["products"].get(product_code)
+    if exact_product:
+        adjustments.append(exact_product.get("delta", 0.0) * 0.55)
+        reasons.append(
+            f"Trained uplift from {exact_product.get('sampleCount', 0)} historical outcome(s) for {product.name}"
+        )
+
+    category_adj = _policy_adjustments["categories"].get(category_code)
+    if category_adj:
+        adjustments.append(category_adj.get("delta", 0.0) * 0.18)
+
+    subcategory_adj = _policy_adjustments["subcategories"].get(subcategory_code)
+    if subcategory_adj:
+        adjustments.append(subcategory_adj.get("delta", 0.0) * 0.15)
+
+    policy_type_adj = _policy_adjustments["policyTypes"].get(policy_type_key)
+    if policy_type_adj:
+        adjustments.append(policy_type_adj.get("delta", 0.0) * 0.12)
+
+    # Child-aware trained adjustments (when child features are available)
+    dependents = int(features.get("dependents", features.get("memberCount", 0)) or 0)
+    children_ages = _parse_children_ages(features.get("childrenAges"))
+    child_count = dependents if dependents > 0 else len(children_ages)
+
+    count_bucket = _children_count_bucket(child_count)
+    count_adj = _policy_adjustments["childrenCountBuckets"].get(count_bucket)
+    if count_adj:
+        adjustments.append(count_adj.get("delta", 0.0) * 0.10)
+
+    for bucket in _children_age_buckets(children_ages):
+        age_adj = _policy_adjustments["childrenAgeBuckets"].get(bucket)
+        if age_adj:
+            adjustments.append(age_adj.get("delta", 0.0) * 0.08)
+
+    purpose = _normalize_key(features.get("protectionPurpose"))
+    if purpose == "educationfunding":
+        education_adj = _policy_adjustments["educationPurpose"].get("educationfunding")
+        if education_adj:
+            adjustments.append(education_adj.get("delta", 0.0) * 0.10)
+            if child_count > 0:
+                reasons.append(f"Education funding fit based on child profile ({child_count} dependent(s))")
+
+    total_adjustment = round(max(min(sum(adjustments), 0.25), -0.25), 4)
+    if total_adjustment == 0:
+        reasons = []
+
+    return total_adjustment, reasons
 
 
 # ---------------------------------------------------------------------------
@@ -157,13 +454,29 @@ def _get_rider_exclusions(features: dict[str, Any], base_exclusions: list[str]) 
 # Policy-type classification (enhanced)
 # ---------------------------------------------------------------------------
 
-def _classify_policy_type(tags: list[str], features: dict[str, Any]) -> str:
+def _classify_policy_type(
+    tags: list[str],
+    features: dict[str, Any],
+    category: Optional[str] = None,
+    sub_category: Optional[str] = None,
+) -> str:
     """Classify the product into Life, Retirement, Investment, or Critical Illness."""
     tag_set = set(t.lower() for t in tags)
+    category_name = (category or "").lower()
+    sub_category_name = (sub_category or "").lower()
     age = int(features.get("age", 30))
     protection_purpose = features.get("protectionPurpose", "")
     priority_equity = int(features.get("priorityEquity", 3))
     priority_safety = int(features.get("prioritySafety", 3))
+
+    if "life" in category_name or "protection" in sub_category_name:
+        return "Life"
+    if "retirement" in category_name:
+        return "Retirement"
+    if "investment" in category_name:
+        return "Investment"
+    if "medical" in category_name:
+        return "Critical Illness"
 
     if "critical" in tag_set or "ci" in tag_set or "illness" in tag_set:
         return "Critical Illness"
@@ -175,6 +488,168 @@ def _classify_policy_type(tags: list[str], features: dict[str, Any]) -> str:
         return "Critical Illness"
     # Default to Life for term/whole/family products
     return "Life"
+
+
+def _build_product_metadata(product: Product) -> Optional[dict[str, Any]]:
+    metadata: dict[str, Any] = {}
+    if product.category:
+        metadata["category"] = product.category
+    if product.subCategory:
+        metadata["subCategory"] = product.subCategory
+    if product.benefits is not None:
+        metadata["benefits"] = product.benefits
+    if product.riders is not None:
+        metadata["riders"] = product.riders
+    if product.eligibility is not None:
+        metadata["eligibility"] = product.eligibility
+    if product.sampleCalculations is not None:
+        metadata["sampleCalculations"] = product.sampleCalculations
+    if product.paymentModes is not None:
+        metadata["paymentModes"] = product.paymentModes
+    if product.howItWorks:
+        metadata["howItWorks"] = product.howItWorks
+    if product.additionalBenefits:
+        metadata["additionalBenefits"] = product.additionalBenefits
+    if product.minEligibleAge is not None:
+        metadata["minEligibleAge"] = product.minEligibleAge
+    if product.maxEligibleAge is not None:
+        metadata["maxEligibleAge"] = product.maxEligibleAge
+    if product.minPolicyTermYears is not None:
+        metadata["minPolicyTermYears"] = product.minPolicyTermYears
+    if product.maxPolicyTermYears is not None:
+        metadata["maxPolicyTermYears"] = product.maxPolicyTermYears
+    return metadata if metadata else None
+
+
+def _metadata_reasons(product: Product) -> list[str]:
+    reasons: list[str] = []
+    if product.category:
+        reasons.append(f"Mapped under {product.category}")
+    if product.subCategory:
+        reasons.append(f"Subcategory fit: {product.subCategory}")
+    if product.minEligibleAge is not None and product.maxEligibleAge is not None:
+        reasons.append(
+            f"Typical eligibility age range {product.minEligibleAge}-{product.maxEligibleAge}"
+        )
+    return reasons
+
+
+def _is_missing(features: dict[str, Any], key: str) -> bool:
+    value = features.get(key)
+    if value is None:
+        return True
+    if isinstance(value, str):
+        return value.strip() == ""
+    if isinstance(value, list):
+        return len(value) == 0
+    return False
+
+
+def _build_follow_up_questions(features: dict[str, Any], ranked: list[RankedProduct]) -> list[FollowUpQuestion]:
+    top_plan_names = [p.name for p in ranked[:3]]
+    questions: list[FollowUpQuestion] = []
+
+    top_score = ranked[0].score if ranked else 0.0
+    second_score = ranked[1].score if len(ranked) > 1 else 0.0
+    score_gap = top_score - second_score
+    low_confidence = (
+        top_score < FOLLOW_UP_CONFIDENCE_THRESHOLD
+        or score_gap < FOLLOW_UP_SCORE_GAP_THRESHOLD
+    )
+
+    # Always ask critical underwriting and affordability inputs.
+    if _is_missing(features, "age"):
+        questions.append(FollowUpQuestion(
+            id="age_required",
+            key="age",
+            question="What is your current age?",
+            type="number",
+            reason="Age is required for underwriting eligibility and pricing.",
+            relatedPlans=top_plan_names,
+        ))
+
+    if _is_missing(features, "monthlyIncomeLkr") and _is_missing(features, "income"):
+        questions.append(FollowUpQuestion(
+            id="income_required",
+            key="monthlyIncomeLkr",
+            question="What is your monthly income (LKR)?",
+            type="number",
+            reason="Income is needed to evaluate affordability and lapse risk.",
+            relatedPlans=top_plan_names,
+        ))
+
+    if _is_missing(features, "monthlyExpensesLkr"):
+        questions.append(FollowUpQuestion(
+            id="expenses_required",
+            key="monthlyExpensesLkr",
+            question="What are your monthly expenses (LKR)?",
+            type="number",
+            reason="Expenses improve coverage and affordability calculations.",
+            relatedPlans=top_plan_names,
+        ))
+
+    if _is_missing(features, "smoker") and _is_missing(features, "tobaccoUse"):
+        questions.append(FollowUpQuestion(
+            id="smoker_required",
+            key="smoker",
+            question="Do you currently use tobacco products?",
+            type="boolean",
+            reason="Smoking status affects underwriting decisions and premium loading.",
+            relatedPlans=top_plan_names,
+        ))
+
+    # Ask optional plan-shaping questions only when model confidence is low.
+    if _is_missing(features, "protectionPurpose") and low_confidence:
+        questions.append(FollowUpQuestion(
+            id="purpose_required",
+            key="protectionPurpose",
+            question="What is your main protection purpose?",
+            type="select",
+            options=["SurvivorIncome", "EducationFunding", "RetirementSupplement", "EstateLiquidity"],
+            reason="Protection purpose determines the recommended coverage strategy.",
+            relatedPlans=top_plan_names,
+        ))
+
+    top_subcategories = {str((p.subCategory or "")).lower() for p in ranked[:3]}
+    top_policy_types = {str((p.policyType or "")).lower() for p in ranked[:3]}
+    education_sensitive = (
+        "educationfunding" == str(features.get("protectionPurpose", "")).strip().lower()
+        or any("education" in sub for sub in top_subcategories)
+        or "life" in top_policy_types
+    )
+
+    if _is_missing(features, "childrenAges") and education_sensitive:
+        questions.append(FollowUpQuestion(
+            id="children_ages_required",
+            key="childrenAges",
+            question="Enter your children ages separated by commas (e.g. 5, 9).",
+            type="text",
+            reason="Education funding projections require children age details.",
+            relatedPlans=top_plan_names,
+        ))
+
+    protection_keywords = ["protection", "endowment", "advanced", "smart", "supreme", "saubhagya"]
+    if any(any(k in sub for k in protection_keywords) for sub in top_subcategories) and low_confidence:
+        if _is_missing(features, "desiredPolicyTermYears"):
+            questions.append(FollowUpQuestion(
+                id="policy_term_required",
+                key="desiredPolicyTermYears",
+                question="Preferred policy term in years?",
+                type="number",
+                reason="Protection plans vary heavily by term length.",
+                relatedPlans=top_plan_names,
+            ))
+        if _is_missing(features, "desiredSumAssured"):
+            questions.append(FollowUpQuestion(
+                id="sum_assured_required",
+                key="desiredSumAssured",
+                question="Desired sum assured amount (LKR)?",
+                type="number",
+                reason="Sum assured preference helps select a suitable life protection plan.",
+                relatedPlans=top_plan_names,
+            ))
+
+    return questions
 
 
 # ---------------------------------------------------------------------------
@@ -252,22 +727,16 @@ def _predict_coverage(features: dict[str, Any]) -> float:
     """
     monthly_expenses = float(features.get("monthlyExpensesLkr", features.get("monthlyIncomeLkr", 50000) * 0.5))
     protection_purpose = features.get("protectionPurpose", "SurvivorIncome")
-    children_ages_raw = features.get("childrenAges", "")
+    children_ages = _parse_children_ages(features.get("childrenAges", ""))
 
     if protection_purpose == "EducationFunding":
         # Calculate years until youngest child reaches 21
-        if children_ages_raw:
-            try:
-                ages = [int(a.strip()) for a in str(children_ages_raw).split(",")
-                        if a.strip().lstrip('-').isdigit()]
-                if ages:
-                    youngest = min(ages)
-                    years_remaining = max(0, 21 - youngest)
-                    if years_remaining > 0:
-                        coverage = monthly_expenses * 12 * years_remaining
-                        return round(min(coverage, MAX_COVERAGE_LKR), 0)
-            except (ValueError, TypeError):
-                pass
+        if children_ages:
+            youngest = min(children_ages)
+            years_remaining = max(0, 21 - youngest)
+            if years_remaining > 0:
+                coverage = monthly_expenses * 12 * years_remaining
+                return round(min(coverage, MAX_COVERAGE_LKR), 0)
         # Fallback: 15-year education period (youngest child already 21+, or no children ages provided)
         coverage = monthly_expenses * 12 * 15
     elif protection_purpose == "RetirementSupplement":
@@ -400,6 +869,13 @@ def _score_product(
         score -= w["condition_penalty"] * len(conditions)
         reasons.append(f"{len(conditions)} pre-existing condition(s) noted")
 
+    policy_type = _classify_policy_type(tags, features, product.category, product.subCategory)
+
+    learned_delta, learned_reasons = _learned_policy_adjustment(product, policy_type, features)
+    if learned_delta != 0:
+        score += learned_delta
+        reasons.extend(learned_reasons)
+
     # Affordability check: penalise if target premium exceeds 20% of disposable income
     disposable = max(income - monthly_expenses, 0)
     if disposable > 0:
@@ -428,7 +904,6 @@ def _score_product(
 
     affordability = _affordability_score(premium_estimate, income)
     lapse_prob = _lapse_probability(features, premium_estimate)
-    policy_type = _classify_policy_type(tags, features)
 
     return score, premium_estimate, affordability, lapse_prob, policy_type, reasons
 
@@ -439,25 +914,50 @@ def _score_product(
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": "ai-engine", "version": "2.0.0"}
+    return {
+        "status": "ok",
+        "service": "ai-engine",
+        "version": "2.0.0",
+        "activeModel": _active_model_meta,
+    }
+
+
+@app.post("/models/{artifact_id}/activate", response_model=ModelActivationResponse)
+def activate_model(artifact_id: str):
+    artifact = _load_model_artifact(artifact_id)
+    _apply_model_artifact(artifact, persist_active=True)
+    return ModelActivationResponse(
+        message=f"Activated model '{artifact.get('modelName', artifact_id)}'",
+        artifactId=artifact_id,
+        modelName=artifact.get("modelName", artifact_id),
+    )
 
 
 @app.post("/score", response_model=ScoreResponse)
 def score(request: ScoreRequest):
     logger.info("Scoring session=%s products=%d", request.sessionId, len(request.products))
 
+    normalized_features = dict(request.features)
+    if (
+        normalized_features.get("smoker") is None
+        and isinstance(normalized_features.get("tobaccoUse"), bool)
+    ):
+        normalized_features["smoker"] = normalized_features["tobaccoUse"]
+
     # Step 1: CART underwriting
-    eligibility_decision, base_exclusions = _run_cart_underwriting(request.features)
-    rider_exclusions = _get_rider_exclusions(request.features, base_exclusions)
+    eligibility_decision, base_exclusions = _run_cart_underwriting(normalized_features)
+    rider_exclusions = _get_rider_exclusions(normalized_features, base_exclusions)
 
     # Step 3: Predict coverage
-    predicted_coverage = _predict_coverage(request.features)
+    predicted_coverage = _predict_coverage(normalized_features)
 
     ranked: list[RankedProduct] = []
     for product in request.products:
         s, premium, afford, lapse, pol_type, reasons = _score_product(
-            request.features, product, _weights
+            normalized_features, product, _weights
         )
+        reasons.extend(_metadata_reasons(product))
+        product_metadata = _build_product_metadata(product)
 
         # If no offer globally, score is 0 and reasons reflect that
         effective_decision = eligibility_decision
@@ -481,6 +981,9 @@ def score(request: ScoreRequest):
                 predictedCoverage=predicted_coverage,
                 suitabilityRank=0,  # assigned below
                 riderExclusions=rider_exclusions,
+                category=product.category,
+                subCategory=product.subCategory,
+                productMetadata=product_metadata,
             )
         )
 
@@ -489,16 +992,20 @@ def score(request: ScoreRequest):
     for idx, p in enumerate(ranked):
         p.suitabilityRank = idx + 1
 
-    return ScoreResponse(sessionId=request.sessionId, rankedProducts=ranked)
+    follow_up_questions = _build_follow_up_questions(normalized_features, ranked)
+
+    return ScoreResponse(
+        sessionId=request.sessionId,
+        rankedProducts=ranked,
+        followUpQuestions=follow_up_questions,
+    )
 
 
 @app.post("/train", response_model=TrainResponse)
 async def train(file: UploadFile = File(...)):
     """
-    Accept a CSV training dataset to update feature weights.
-    Expected CSV columns (all optional): age, smoker, dependents, income,
-    coverageAmount, conditions_count, outcome_score (0-1 ground truth).
-    Admin function: retrains RBM weights and logs model version.
+    Accept a policy recommendation outcome CSV to update feature weights and
+    product-linked adjustments that influence future predictions.
     """
     if not file.filename or not file.filename.endswith(".csv"):
         raise HTTPException(status_code=400, detail="Only CSV files are accepted")
@@ -510,6 +1017,24 @@ async def train(file: UploadFile = File(...)):
         text = content.decode("latin-1")
 
     reader = csv.DictReader(io.StringIO(text))
+    if not reader.fieldnames:
+        raise HTTPException(status_code=400, detail="Invalid training CSV: header row is missing")
+
+    normalized_headers = {
+        str(name).strip().replace("\ufeff", "").strip('"').lower()
+        for name in reader.fieldnames
+        if name is not None
+    }
+    missing_headers = sorted(REQUIRED_TRAIN_COLUMNS - normalized_headers)
+    if missing_headers:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "message": f"Invalid training CSV for {TRAINING_FORMAT_VERSION}: missing required header column(s).",
+                "missingColumns": missing_headers,
+            },
+        )
+
     rows = list(reader)
 
     if not rows:
@@ -522,8 +1047,17 @@ async def train(file: UploadFile = File(...)):
     no_offer_count = 0
     invest_scores: list[float] = []
     protect_scores: list[float] = []
+    outcome_scores: list[float] = []
+    product_scores: dict[str, list[float]] = {}
+    category_scores: dict[str, list[float]] = {}
+    subcategory_scores: dict[str, list[float]] = {}
+    policy_type_scores: dict[str, list[float]] = {}
+    children_count_scores: dict[str, list[float]] = {}
+    children_age_bucket_scores: dict[str, list[float]] = {}
+    education_purpose_scores: dict[str, list[float]] = {}
 
     valid_rows = 0
+    skipped_rows = 0
     for row in rows:
         try:
             outcome = float(row.get("outcome_score", row.get("score", 0.5)))
@@ -531,6 +1065,19 @@ async def train(file: UploadFile = File(...)):
             smoker = str(row.get("smoker", "false")).lower() in ("true", "1", "yes")
             policy_type = str(row.get("policy_type", "")).lower()
             eligibility = str(row.get("eligibility", "eligible")).lower()
+            product_code = _normalize_key(row.get("product_code"), uppercase=True)
+            category_code = _normalize_key(row.get("category_code"), uppercase=True)
+            subcategory_code = _normalize_key(row.get("subcategory_code"), uppercase=True)
+            protection_purpose = _normalize_key(row.get("protection_purpose"))
+
+            children_count_raw = str(row.get("children_count", "")).strip()
+            children_count = int(children_count_raw) if children_count_raw else 0
+            children_ages = _parse_children_ages(row.get("children_ages_csv", ""))
+            if children_count <= 0 and children_ages:
+                children_count = len(children_ages)
+
+            outcome = max(0.0, min(outcome, 1.0))
+            outcome_scores.append(outcome)
 
             if eligibility == "no offer":
                 no_offer_count += 1
@@ -550,9 +1097,33 @@ async def train(file: UploadFile = File(...)):
             elif "life" in policy_type or "term" in policy_type:
                 protect_scores.append(outcome)
 
+            if product_code:
+                product_scores.setdefault(product_code, []).append(outcome)
+            if category_code:
+                category_scores.setdefault(category_code, []).append(outcome)
+            if subcategory_code:
+                subcategory_scores.setdefault(subcategory_code, []).append(outcome)
+            if policy_type:
+                policy_type_scores.setdefault(policy_type, []).append(outcome)
+
+            count_bucket = _children_count_bucket(children_count)
+            children_count_scores.setdefault(count_bucket, []).append(outcome)
+
+            for bucket in _children_age_buckets(children_ages):
+                children_age_bucket_scores.setdefault(bucket, []).append(outcome)
+
+            if protection_purpose == "educationfunding" or "education" in policy_type:
+                education_purpose_scores.setdefault("educationfunding", []).append(outcome)
+
             valid_rows += 1
         except (ValueError, TypeError):
+            skipped_rows += 1
             continue
+
+    if valid_rows == 0:
+        raise HTTPException(status_code=400, detail="CSV file does not contain any valid training rows")
+
+    trained_weights = dict(DEFAULT_WEIGHTS)
 
     # Update weights based on dataset averages
     if smoker_scores and nonsmoker_scores:
@@ -564,30 +1135,77 @@ async def train(file: UploadFile = File(...)):
                 "Unexpected pattern: smokers scored higher (diff=%.4f). skipping smoker_penalty update.", diff
             )
         else:
-            _weights["smoker_penalty"] = round(min(max(diff, 0.05), 0.40), 4)
+            trained_weights["smoker_penalty"] = round(min(max(diff, 0.05), 0.40), 4)
 
     if young_scores and old_scores:
         young_avg = sum(young_scores) / len(young_scores)
         old_avg = sum(old_scores) / len(old_scores)
-        _weights["age_young_boost"] = round(min(max(young_avg - 0.5, 0.02), 0.25), 4)
-        _weights["age_old_penalty"] = round(min(max(0.5 - old_avg, 0.02), 0.30), 4)
+        trained_weights["age_young_boost"] = round(min(max(young_avg - 0.5, 0.02), 0.25), 4)
+        trained_weights["age_old_penalty"] = round(min(max(0.5 - old_avg, 0.02), 0.30), 4)
 
     if invest_scores and protect_scores:
         invest_avg = sum(invest_scores) / len(invest_scores)
         protect_avg = sum(protect_scores) / len(protect_scores)
         if invest_avg > protect_avg:
-            _weights["postgrad_invest_boost"] = round(min(_weights["postgrad_invest_boost"] + 0.01, 0.25), 4)
+            trained_weights["postgrad_invest_boost"] = round(
+                min(trained_weights["postgrad_invest_boost"] + 0.01, 0.25), 4
+            )
         else:
-            _weights["high_expense_protection"] = round(min(_weights["high_expense_protection"] + 0.01, 0.25), 4)
+            trained_weights["high_expense_protection"] = round(
+                min(trained_weights["high_expense_protection"] + 0.01, 0.25), 4
+            )
+
+    overall_avg = round(_average(outcome_scores), 4)
+    policy_adjustments = {
+        "products": _summarize_adjustments(product_scores, overall_avg),
+        "categories": _summarize_adjustments(category_scores, overall_avg),
+        "subcategories": _summarize_adjustments(subcategory_scores, overall_avg),
+        "policyTypes": _summarize_adjustments(policy_type_scores, overall_avg),
+        "childrenCountBuckets": _summarize_adjustments(children_count_scores, overall_avg),
+        "childrenAgeBuckets": _summarize_adjustments(children_age_bucket_scores, overall_avg),
+        "educationPurpose": _summarize_adjustments(education_purpose_scores, overall_avg),
+    }
+
+    artifact_id = f"model-{uuid4().hex[:12]}"
+    model_name = f"Policy Outcome Model {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}"
+    artifact = {
+        "artifactId": artifact_id,
+        "modelName": model_name,
+        "trainedAt": datetime.now(timezone.utc).isoformat(),
+        "trainingFormat": TRAINING_FORMAT_VERSION,
+        "sourceFilename": file.filename,
+        "rowsProcessed": valid_rows,
+        "skippedRows": skipped_rows,
+        "noOfferRows": no_offer_count,
+        "weights": trained_weights,
+        "policyAdjustments": policy_adjustments,
+        "summary": {
+            "overallAverageOutcome": overall_avg,
+            "productSamples": len(policy_adjustments["products"]),
+            "categorySamples": len(policy_adjustments["categories"]),
+            "subcategorySamples": len(policy_adjustments["subcategories"]),
+            "policyTypeSamples": len(policy_adjustments["policyTypes"]),
+            "childrenCountBuckets": len(policy_adjustments["childrenCountBuckets"]),
+            "childrenAgeBuckets": len(policy_adjustments["childrenAgeBuckets"]),
+        },
+    }
+    _persist_model_artifact(artifact)
 
     logger.info(
-        "Training complete: %d valid rows, %d no-offer rows. Updated weights: %s",
-        valid_rows, no_offer_count, _weights
+        "Training complete: %d valid rows, %d skipped rows, %d no-offer rows. Artifact=%s",
+        valid_rows, skipped_rows, no_offer_count, artifact_id
     )
 
     return TrainResponse(
-        message=f"Training complete. {valid_rows} rows processed. {no_offer_count} 'No Offer' cases analysed for market gap insights.",
+        message=(
+            f"Training complete. {valid_rows} policy outcome rows processed and {skipped_rows} row(s) skipped. "
+            f"Promote the generated model to apply it to future predictions."
+        ),
         rowsProcessed=valid_rows,
-        updatedWeights=dict(_weights),
+        updatedWeights=trained_weights,
+        skippedRows=skipped_rows,
+        modelArtifactId=artifact_id,
+        modelName=model_name,
+        trainingFormat=TRAINING_FORMAT_VERSION,
     )
 
