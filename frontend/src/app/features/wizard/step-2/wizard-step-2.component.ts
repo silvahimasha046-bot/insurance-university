@@ -1,4 +1,4 @@
-import { Component, OnInit } from "@angular/core";
+import { ChangeDetectorRef, Component, OnInit } from "@angular/core";
 import { Router, RouterModule } from "@angular/router";
 import { FormsModule } from "@angular/forms";
 import { CommonModule } from "@angular/common";
@@ -39,7 +39,8 @@ export class WizardStep2Component implements OnInit {
   constructor(
     private wizard: WizardStateService,
     private customerApi: CustomerApiService,
-    private router: Router
+    private router: Router,
+    private cd: ChangeDetectorRef
   ) {
     const s = this.wizard.snapshot.step2;
     if (typeof s?.age === "number") this.age = s.age;
@@ -148,7 +149,11 @@ export class WizardStep2Component implements OnInit {
           priorityPremiumLevel: this.priorityPremiumLevel,
         })
         .subscribe({
-          error: (err) => console.warn("Could not save step-2 answers", err),
+          next: () => this.cd.detectChanges(),
+          error: (err) => {
+            console.warn("Could not save step-2 answers", err);
+            this.cd.detectChanges();
+          },
         });
     }
     this.router.navigateByUrl("/wizard/step-3");

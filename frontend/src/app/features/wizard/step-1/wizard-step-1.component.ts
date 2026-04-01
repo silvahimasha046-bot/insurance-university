@@ -1,4 +1,4 @@
-import { Component, OnInit } from "@angular/core";
+import { ChangeDetectorRef, Component, OnInit } from "@angular/core";
 import { Router, RouterModule } from "@angular/router";
 import { FormsModule } from "@angular/forms";
 import { CommonModule } from "@angular/common";
@@ -27,7 +27,8 @@ export class WizardStep1Component implements OnInit {
   constructor(
     private wizard: WizardStateService,
     private customerApi: CustomerApiService,
-    private router: Router
+    private router: Router,
+    private cd: ChangeDetectorRef
   ) {
     const s = this.wizard.snapshot.step1;
     if (typeof s?.needsText === "string") this.needsText = s.needsText;
@@ -46,8 +47,14 @@ export class WizardStep1Component implements OnInit {
 
     if (!this.customerApi.getStoredSessionId()) {
       this.customerApi.createSession().subscribe({
-        next: (res) => this.customerApi.storeSessionId(res.sessionId),
-        error: (err) => console.warn("Could not create customer session", err),
+        next: (res) => {
+          this.customerApi.storeSessionId(res.sessionId);
+          this.cd.detectChanges();
+        },
+        error: (err) => {
+          console.warn("Could not create customer session", err);
+          this.cd.detectChanges();
+        },
       });
     }
   }
@@ -66,8 +73,13 @@ export class WizardStep1Component implements OnInit {
     const sessionId = this.customerApi.getStoredSessionId();
     if (sessionId) {
       this.customerApi.deleteSession(sessionId).subscribe({
-        next: () => {},
-        error: (err) => console.warn("Could not delete session from backend", err),
+        next: () => {
+          this.cd.detectChanges();
+        },
+        error: (err) => {
+          console.warn("Could not delete session from backend", err);
+          this.cd.detectChanges();
+        },
       });
       localStorage.removeItem("insurance_customer_session_id");
     }
@@ -100,7 +112,11 @@ export class WizardStep1Component implements OnInit {
           occupationHazardLevel: this.occupationHazardLevel,
         })
         .subscribe({
-          error: (err) => console.warn("Could not save step-1 answers", err),
+          next: () => this.cd.detectChanges(),
+          error: (err) => {
+            console.warn("Could not save step-1 answers", err);
+            this.cd.detectChanges();
+          },
         });
     }
     this.router.navigateByUrl("/wizard/step-2");

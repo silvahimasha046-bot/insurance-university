@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -16,16 +16,24 @@ export class AdminLoginComponent {
   error = '';
   loading = false;
 
-  constructor(private auth: AdminAuthService, private router: Router) {}
+  constructor(
+    private auth: AdminAuthService,
+    private router: Router,
+    private cd: ChangeDetectorRef
+  ) {}
 
   submit(): void {
     this.error = '';
     this.loading = true;
     this.auth.login(this.email, this.password).subscribe({
-      next: () => this.router.navigate(['/admin']),
+      next: () => {
+        this.cd.detectChanges();
+        this.router.navigate(['/admin']);
+      },
       error: () => {
         this.error = 'Invalid credentials';
         this.loading = false;
+        this.cd.detectChanges();
       },
     });
   }

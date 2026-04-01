@@ -63,6 +63,8 @@ export class AdminProductsComponent implements OnInit {
 
   successMsg: string | null = null;
   errorMsg: string | null = null;
+  confirmDeleteOpen = false;
+  deleteCandidateId: number | null = null;
 
   constructor(
     private api: AdminApiService,
@@ -79,16 +81,24 @@ export class AdminProductsComponent implements OnInit {
       next: (categories) => {
         this.categories = categories;
         this.refreshVisibleSubcategories();
+        this.cd.detectChanges();
       },
-      error: () => this.showError('Failed to load categories.'),
+      error: () => {
+        this.showError('Failed to load categories.');
+        this.cd.detectChanges();
+      },
     });
 
     this.api.listSubcategories().subscribe({
       next: (subcategories) => {
         this.subcategories = subcategories;
         this.refreshVisibleSubcategories();
+        this.cd.detectChanges();
       },
-      error: () => this.showError('Failed to load subcategories.'),
+      error: () => {
+        this.showError('Failed to load subcategories.');
+        this.cd.detectChanges();
+      },
     });
   }
 
@@ -98,7 +108,10 @@ export class AdminProductsComponent implements OnInit {
         this.products = products;
         this.cd.detectChanges();
       },
-      error: () => this.showError('Failed to load products.'),
+      error: () => {
+        this.showError('Failed to load products.');
+        this.cd.detectChanges();
+      },
     });
   }
 
@@ -127,6 +140,10 @@ export class AdminProductsComponent implements OnInit {
     else this.selectedTags.add(value);
   }
 
+  removeTag(value: string): void {
+    this.selectedTags.delete(value);
+  }
+
   addCustomTag(): void {
     const tag = this.customTagInput
       .trim()
@@ -150,6 +167,11 @@ export class AdminProductsComponent implements OnInit {
   }
 
   save(): void {
+    if (!this.form.code.trim() || !this.form.name.trim() || Number(this.form.basePremium) <= 0) {
+      this.showError('Please enter plan code, plan name, and base premium.');
+      return;
+    }
+
     if (!this.form.categoryId) {
       this.showError('Please select a main category.');
       return;
@@ -187,21 +209,33 @@ export class AdminProductsComponent implements OnInit {
 
     if (this.editId) {
       this.api.updateProduct(this.editId, body).subscribe({
-        next: () => {
+        next: (updated) => {
+          const normalized = this.normalizeSavedProduct(updated || body);
+          this.products = this.products.map((p) =>
+            p.id === this.editId ? { ...p, ...normalized } : p
+          );
           this.showSuccess('Plan updated.');
           this.cancelEdit();
-          this.loadProducts();
+          this.cd.detectChanges();
         },
-        error: () => this.showError('Failed to update plan. Check hierarchy and JSON fields.'),
+        error: () => {
+          this.showError('Failed to update plan. Check hierarchy and JSON fields.');
+          this.cd.detectChanges();
+        },
       });
     } else {
       this.api.createProduct(body).subscribe({
-        next: () => {
+        next: (created) => {
+          const normalized = this.normalizeSavedProduct(created || body);
+          this.products = [normalized, ...this.products];
           this.showSuccess('Plan created.');
           this.resetForm();
-          this.loadProducts();
+          this.cd.detectChanges();
         },
-        error: () => this.showError('Failed to create plan. Check code uniqueness and hierarchy.'),
+        error: () => {
+          this.showError('Failed to create plan. Check code uniqueness and hierarchy.');
+          this.cd.detectChanges();
+        },
       });
     }
   }
@@ -237,13 +271,31 @@ export class AdminProductsComponent implements OnInit {
 
   remove(id: number): void {
     if (!id) return;
-    if (!confirm('Delete this plan? This cannot be undone.')) return;
+    this.deleteCandidateId = id;
+    this.confirmDeleteOpen = true;
+  }
+
+  cancelDelete(): void {
+    this.confirmDeleteOpen = false;
+    this.deleteCandidateId = null;
+  }
+
+  confirmDelete(): void {
+    const id = this.deleteCandidateId;
+    if (!id) return;
+    this.confirmDeleteOpen = false;
+    this.deleteCandidateId = null;
+
     this.api.deleteProduct(id).subscribe({
       next: () => {
         this.showSuccess('Plan deleted.');
+        this.cd.detectChanges();
         this.loadProducts();
       },
-      error: () => this.showError('Failed to delete plan.'),
+      error: () => {
+        this.showError('Failed to delete plan.');
+        this.cd.detectChanges();
+      },
     });
   }
 
@@ -274,6 +326,23 @@ export class AdminProductsComponent implements OnInit {
   private cleanJsonText(value: string): string | undefined {
     const text = value?.trim();
     return text ? text : undefined;
+  }
+
+  private normalizeSavedProduct(product: AdminProduct): AdminProduct {
+    const category =
+      product.category ||
+      this.categories.find((c) => c.id === this.form.categoryId) ||
+      null;
+    const subcategory =
+      product.subcategory ||
+      this.subcategories.find((s) => s.id === this.form.subcategoryId) ||
+      null;
+
+    return {
+      ...product,
+      category,
+      subcategory,
+    };
   }
 
   private showSuccess(msg: string): void {

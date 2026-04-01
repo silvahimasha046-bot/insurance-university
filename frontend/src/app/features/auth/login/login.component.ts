@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -21,6 +21,7 @@ export class LoginComponent {
     private http: HttpClient,
     private router: Router,
     private customerAuth: CustomerAuthService,
+    private cd: ChangeDetectorRef,
   ) {}
 
   login(): void {
@@ -35,11 +36,13 @@ export class LoginComponent {
         next: (res) => {
           this.customerAuth.storeSession(res.token, res.name, res.email);
           this.loading = false;
+          this.cd.detectChanges();
           this.router.navigateByUrl('/customer/dashboard');
         },
         error: () => {
           this.loading = false;
           this.errorVisible = true;
+          this.cd.detectChanges();
         },
       });
   }

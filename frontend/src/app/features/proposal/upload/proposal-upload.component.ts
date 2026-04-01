@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { WizardStateService } from '../../../core/state/wizard-state.service';
@@ -25,6 +25,7 @@ export class ProposalUploadComponent {
     private customerApi: CustomerApiService,
     private http: HttpClient,
     private router: Router,
+    private cd: ChangeDetectorRef,
   ) {
     const docs = wizard.snapshot.documents;
     if (docs) {
@@ -53,6 +54,7 @@ export class ProposalUploadComponent {
         medicalUploaded: this.medicalUploaded,
         incomeUploaded: this.incomeUploaded,
       });
+      this.cd.detectChanges();
     };
 
     if (sessionId) {

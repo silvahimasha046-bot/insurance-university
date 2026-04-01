@@ -83,6 +83,10 @@ AFFORDABILITY_THRESHOLD = 0.20
 FOLLOW_UP_CONFIDENCE_THRESHOLD = 0.62
 FOLLOW_UP_SCORE_GAP_THRESHOLD = 0.12
 
+# Premium calculation defaults
+DEFAULT_FALLBACK_BASE_PREMIUM = 1000.0
+DEFAULT_TAX_RATE = 0.0
+
 
 # ---------------------------------------------------------------------------
 # Request / Response models
@@ -132,6 +136,7 @@ class RankedProduct(BaseModel):
     category: Optional[str] = None
     subCategory: Optional[str] = None
     productMetadata: Optional[dict[str, Any]] = None
+    premiumExplanation: Optional[dict[str, Any]] = None
 
 
 class FollowUpQuestion(BaseModel):
@@ -808,14 +813,143 @@ def _lapse_probability(features: dict[str, Any], monthly_premium: float) -> floa
     return round(min(prob, 0.95), 4)
 
 
+def _to_float(value: Any, default: float = 0.0) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _extract_selected_rider_keys(features: dict[str, Any]) -> set[str]:
+    selected = features.get("selectedRiders", features.get("selectedRiderCodes", []))
+    keys: set[str] = set()
+    if not isinstance(selected, list):
+        return keys
+
+    for item in selected:
+        if isinstance(item, str) and item.strip():
+            keys.add(item.strip().lower())
+            continue
+        if isinstance(item, dict):
+            code = str(item.get("code", "")).strip().lower()
+            name = str(item.get("name", "")).strip().lower()
+            if code:
+                keys.add(code)
+            if name:
+                keys.add(name)
+    return keys
+
+
+def _calculate_monthly_premium(
+    features: dict[str, Any], product: Product, w: dict[str, float]
+) -> tuple[float, dict[str, Any]]:
+    age = int(features.get("age", 30))
+    smoker = bool(features.get("smoker", False))
+    conditions = features.get("conditions", [])
+    condition_count = len(conditions) if isinstance(conditions, list) else 0
+    occupation_hazard = int(features.get("occupationHazardLevel", 1) or 1)
+
+    coverage = _to_float(
+        features.get("coverageAmount", features.get("desiredSumAssured", 0.0)),
+        0.0,
+    )
+    if coverage <= 0:
+        coverage = max(product.basePremium * 100.0, 1_000_000.0)
+
+    base_premium = product.basePremium
+    used_fallback_base = False
+    if base_premium <= 0:
+        used_fallback_base = True
+        base_premium = DEFAULT_FALLBACK_BASE_PREMIUM
+
+    # Scale legacy base premium by requested coverage with a 1M baseline.
+    coverage_factor = max(coverage / 1_000_000.0, 0.25)
+    coverage_component = base_premium * coverage_factor
+
+    risk_multiplier = 1.0
+    risk_breakdown: dict[str, float] = {}
+    if smoker:
+        risk_breakdown["smoker"] = w["smoker_risk_pct"]
+        risk_multiplier += w["smoker_risk_pct"]
+    if age > 55:
+        risk_breakdown["ageOver55"] = w["age_old_risk_pct"]
+        risk_multiplier += w["age_old_risk_pct"]
+    if condition_count > 0:
+        condition_load = w["condition_risk_pct"] * condition_count
+        risk_breakdown["conditions"] = condition_load
+        risk_multiplier += condition_load
+    if occupation_hazard >= 4:
+        occupation_load = 0.05 * min(occupation_hazard, 5)
+        risk_breakdown["occupationHazard"] = occupation_load
+        risk_multiplier += occupation_load
+
+    premium_after_risk = coverage_component * risk_multiplier
+
+    selected_riders = _extract_selected_rider_keys(features)
+    rider_premium_total = 0.0
+    rider_breakdown: list[dict[str, Any]] = []
+    if selected_riders and product.riders:
+        for rider in product.riders:
+            if not isinstance(rider, dict):
+                continue
+            rider_code = str(rider.get("code", "")).strip()
+            rider_name = str(rider.get("name", "")).strip()
+            rider_key_code = rider_code.lower()
+            rider_key_name = rider_name.lower()
+            if rider_key_code not in selected_riders and rider_key_name not in selected_riders:
+                continue
+
+            rider_base = _to_float(
+                rider.get("monthlyPremium", rider.get("premium", rider.get("basePremium", 0.0))),
+                0.0,
+            )
+            if rider_base <= 0:
+                rider_base = max(base_premium * 0.03, 50.0)
+            rider_cost = rider_base * risk_multiplier
+            rider_premium_total += rider_cost
+            rider_breakdown.append(
+                {
+                    "code": rider_code,
+                    "name": rider_name,
+                    "base": round(rider_base, 2),
+                    "adjusted": round(rider_cost, 2),
+                }
+            )
+
+    sub_total = premium_after_risk + rider_premium_total
+    tax_rate = _to_float(features.get("taxRate"), DEFAULT_TAX_RATE)
+    tax_rate = max(0.0, min(tax_rate, 1.0))
+    tax_amount = sub_total * tax_rate
+    final_monthly = round(sub_total + tax_amount, 2)
+
+    explanation = {
+        "coverageAmount": round(coverage, 2),
+        "basePremiumUsed": round(base_premium, 2),
+        "usedFallbackBasePremium": used_fallback_base,
+        "coverageFactor": round(coverage_factor, 4),
+        "coverageComponent": round(coverage_component, 2),
+        "riskMultiplier": round(risk_multiplier, 4),
+        "riskBreakdown": {k: round(v, 4) for k, v in risk_breakdown.items()},
+        "premiumAfterRisk": round(premium_after_risk, 2),
+        "selectedRiderCount": len(rider_breakdown),
+        "selectedRiderPremium": round(rider_premium_total, 2),
+        "riderBreakdown": rider_breakdown,
+        "subTotal": round(sub_total, 2),
+        "taxRate": round(tax_rate, 4),
+        "taxAmount": round(tax_amount, 2),
+    }
+
+    return final_monthly, explanation
+
+
 # ---------------------------------------------------------------------------
 # Core heuristic scoring (enhanced with collaborative filtering)
 # ---------------------------------------------------------------------------
 
 def _score_product(
     features: dict[str, Any], product: Product, w: dict[str, float]
-) -> tuple[float, float, float, float, str, list[str]]:
-    """Returns (score, premium_estimate, affordability, lapse_prob, policy_type, reasons)."""
+) -> tuple[float, float, float, float, str, list[str], dict[str, Any]]:
+    """Returns (score, premium_estimate, affordability, lapse_prob, policy_type, reasons, premium_explanation)."""
     score = 0.5
     reasons: list[str] = []
     tags = [t.lower() for t in (product.tags or [])]
@@ -891,21 +1025,15 @@ def _score_product(
 
     score = round(max(0.0, min(1.0, score)), 4)
 
-    # Premium estimate with risk multiplier
-    risk_multiplier = 1.0
-    if smoker:
-        risk_multiplier += w["smoker_risk_pct"]
-    if age > 55:
-        risk_multiplier += w["age_old_risk_pct"]
-    if conditions:
-        risk_multiplier += w["condition_risk_pct"] * len(conditions)
+    premium_estimate, premium_explanation = _calculate_monthly_premium(features, product, w)
 
-    premium_estimate = round(product.basePremium * risk_multiplier, 2)
+    if premium_explanation.get("usedFallbackBasePremium"):
+        reasons.append("Base premium unavailable - temporary fallback applied")
 
     affordability = _affordability_score(premium_estimate, income)
     lapse_prob = _lapse_probability(features, premium_estimate)
 
-    return score, premium_estimate, affordability, lapse_prob, policy_type, reasons
+    return score, premium_estimate, affordability, lapse_prob, policy_type, reasons, premium_explanation
 
 
 # ---------------------------------------------------------------------------
@@ -953,7 +1081,7 @@ def score(request: ScoreRequest):
 
     ranked: list[RankedProduct] = []
     for product in request.products:
-        s, premium, afford, lapse, pol_type, reasons = _score_product(
+        s, premium, afford, lapse, pol_type, reasons, premium_explanation = _score_product(
             normalized_features, product, _weights
         )
         reasons.extend(_metadata_reasons(product))
@@ -984,6 +1112,7 @@ def score(request: ScoreRequest):
                 category=product.category,
                 subCategory=product.subCategory,
                 productMetadata=product_metadata,
+                premiumExplanation=premium_explanation,
             )
         )
 

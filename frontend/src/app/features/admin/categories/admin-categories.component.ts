@@ -38,6 +38,10 @@ export class AdminCategoriesComponent implements OnInit {
 
   successMsg: string | null = null;
   errorMsg: string | null = null;
+  confirmOpen = false;
+  confirmTitle = '';
+  confirmMessage = '';
+  pendingDelete: { type: 'category' | 'subcategory'; id: number } | null = null;
 
   constructor(
     private api: AdminApiService,
@@ -54,14 +58,20 @@ export class AdminCategoriesComponent implements OnInit {
         this.categories = data;
         this.cd.detectChanges();
       },
-      error: () => this.showError('Failed to load categories.'),
+      error: () => {
+        this.showError('Failed to load categories.');
+        this.cd.detectChanges();
+      },
     });
     this.api.listSubcategories().subscribe({
       next: (data) => {
         this.subcategories = data;
         this.cd.detectChanges();
       },
-      error: () => this.showError('Failed to load subcategories.'),
+      error: () => {
+        this.showError('Failed to load subcategories.');
+        this.cd.detectChanges();
+      },
     });
   }
 
@@ -87,9 +97,13 @@ export class AdminCategoriesComponent implements OnInit {
       next: () => {
         this.showSuccess(this.editingCategoryId ? 'Category updated.' : 'Category created.');
         this.resetCategoryForm();
+        this.cd.detectChanges();
         this.loadAll();
       },
-      error: () => this.showError('Failed to save category.'),
+      error: () => {
+        this.showError('Failed to save category.');
+        this.cd.detectChanges();
+      },
     });
   }
 
@@ -105,15 +119,50 @@ export class AdminCategoriesComponent implements OnInit {
   }
 
   removeCategory(id: number): void {
-    if (!confirm('Delete this category? Linked subcategories/products may fail validation.')) {
+    if (!id) return;
+    this.pendingDelete = { type: 'category', id };
+    this.confirmTitle = 'Delete category?';
+    this.confirmMessage = 'Linked subcategories or products may fail validation after delete.';
+    this.confirmOpen = true;
+  }
+
+  removeSubcategory(id: number): void {
+    if (!id) return;
+    this.pendingDelete = { type: 'subcategory', id };
+    this.confirmTitle = 'Delete subcategory?';
+    this.confirmMessage = 'Linked products may fail validation after delete.';
+    this.confirmOpen = true;
+  }
+
+  cancelDelete(): void {
+    this.confirmOpen = false;
+    this.pendingDelete = null;
+  }
+
+  confirmDelete(): void {
+    if (!this.pendingDelete) return;
+    const { type, id } = this.pendingDelete;
+    this.confirmOpen = false;
+    this.pendingDelete = null;
+
+    if (type === 'category') {
+      this.deleteCategory(id);
       return;
     }
+    this.deleteSubcategory(id);
+  }
+
+  private deleteCategory(id: number): void {
     this.api.deleteCategory(id).subscribe({
       next: () => {
         this.showSuccess('Category deleted.');
+        this.cd.detectChanges();
         this.loadAll();
       },
-      error: () => this.showError('Failed to delete category. Remove dependent subcategories first.'),
+      error: () => {
+        this.showError('Failed to delete category. Remove dependent subcategories first.');
+        this.cd.detectChanges();
+      },
     });
   }
 
@@ -140,9 +189,13 @@ export class AdminCategoriesComponent implements OnInit {
       next: () => {
         this.showSuccess(this.editingSubcategoryId ? 'Subcategory updated.' : 'Subcategory created.');
         this.resetSubcategoryForm();
+        this.cd.detectChanges();
         this.loadAll();
       },
-      error: () => this.showError('Failed to save subcategory.'),
+      error: () => {
+        this.showError('Failed to save subcategory.');
+        this.cd.detectChanges();
+      },
     });
   }
 
@@ -158,16 +211,17 @@ export class AdminCategoriesComponent implements OnInit {
     };
   }
 
-  removeSubcategory(id: number): void {
-    if (!confirm('Delete this subcategory? Linked products will fail validation.')) {
-      return;
-    }
+  private deleteSubcategory(id: number): void {
     this.api.deleteSubcategory(id).subscribe({
       next: () => {
         this.showSuccess('Subcategory deleted.');
+        this.cd.detectChanges();
         this.loadAll();
       },
-      error: () => this.showError('Failed to delete subcategory. Remove dependent products first.'),
+      error: () => {
+        this.showError('Failed to delete subcategory. Remove dependent products first.');
+        this.cd.detectChanges();
+      },
     });
   }
 

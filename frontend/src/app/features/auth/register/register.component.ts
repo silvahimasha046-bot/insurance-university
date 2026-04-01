@@ -1,4 +1,4 @@
-import { Component } from "@angular/core";
+import { ChangeDetectorRef, Component } from "@angular/core";
 import { Router, RouterModule } from "@angular/router";
 import { FormsModule } from "@angular/forms";
 import { CommonModule } from "@angular/common";
@@ -22,6 +22,7 @@ export class RegisterComponent {
     private http: HttpClient,
     private router: Router,
     private customerAuth: CustomerAuthService,
+    private cd: ChangeDetectorRef,
   ) {}
 
   register(): void {
@@ -37,11 +38,13 @@ export class RegisterComponent {
         next: (res) => {
           this.customerAuth.storeSession(res.token, res.name, res.email);
           this.loading = false;
+          this.cd.detectChanges();
           this.router.navigateByUrl("/customer/dashboard");
         },
         error: (err) => {
           this.loading = false;
           this.errorMessage = err?.error?.error ?? "Registration failed. Please try again.";
+          this.cd.detectChanges();
         },
       });
   }

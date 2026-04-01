@@ -81,6 +81,7 @@ export class RecommendationsComponent implements OnInit {
         this.followUpQuestions = [];
         this.applyRanking();
         this.persistRecommendationContext();
+        this.cd.detectChanges();
       },
     });
   }
@@ -135,11 +136,13 @@ export class RecommendationsComponent implements OnInit {
         });
         this.loadRecommendations(sessionId);
         this.submittingFollowUps = false;
+        this.cd.detectChanges();
       },
       error: (err) => {
         console.warn("Could not save follow-up answers", err);
         this.followUpError = "Could not submit additional answers. Please try again.";
         this.submittingFollowUps = false;
+        this.cd.detectChanges();
       },
     });
   }

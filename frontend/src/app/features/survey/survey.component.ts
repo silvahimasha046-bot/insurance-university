@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -16,7 +16,11 @@ export class SurveyComponent {
   feedback = '';
   submitted = false;
 
-  constructor(private http: HttpClient, private router: Router) {}
+  constructor(
+    private http: HttpClient,
+    private router: Router,
+    private cd: ChangeDetectorRef
+  ) {}
 
   submitFeedback(): void {
     this.http
@@ -25,8 +29,14 @@ export class SurveyComponent {
         comments: this.feedback,
       })
       .subscribe({
-        next: () => this.finish(),
-        error: () => this.finish(),
+        next: () => {
+          this.cd.detectChanges();
+          this.finish();
+        },
+        error: () => {
+          this.cd.detectChanges();
+          this.finish();
+        },
       });
   }
 

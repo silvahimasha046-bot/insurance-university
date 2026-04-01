@@ -35,6 +35,22 @@ export interface RankedProduct {
     minPolicyTermYears?: number;
     maxPolicyTermYears?: number;
   };
+  premiumExplanation?: {
+    coverageAmount?: number;
+    basePremiumUsed?: number;
+    usedFallbackBasePremium?: boolean;
+    coverageFactor?: number;
+    coverageComponent?: number;
+    riskMultiplier?: number;
+    riskBreakdown?: Record<string, number>;
+    premiumAfterRisk?: number;
+    selectedRiderCount?: number;
+    selectedRiderPremium?: number;
+    riderBreakdown?: Array<Record<string, unknown>>;
+    subTotal?: number;
+    taxRate?: number;
+    taxAmount?: number;
+  };
 }
 
 export interface FollowUpQuestion {

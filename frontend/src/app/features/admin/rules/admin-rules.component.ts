@@ -12,9 +12,14 @@ import { AdminApiService } from '../admin-api.service';
 export class AdminRulesComponent implements OnInit {
   rules: any[] = [];
   pricingTables: any[] = [];
+  errorMsg: string | null = null;
 
   newRule = { name: '', ruleJson: '{}', version: 1 };
   newPricing = { name: '', pricingJson: '{}', version: 1 };
+  confirmOpen = false;
+  confirmTitle = '';
+  confirmMessage = '';
+  pendingDelete: { type: 'rule' | 'pricing'; id: number } | null = null;
 
   constructor(
     private api: AdminApiService,
@@ -32,22 +37,48 @@ export class AdminRulesComponent implements OnInit {
         this.rules = r;
         this.cd.detectChanges();
       },
-      error: () => this.showError('Failed to load rules.'),
+      error: () => {
+        this.showError('Failed to load rules.');
+        this.cd.detectChanges();
+      },
     });
   }
   showError(message: string): void {
-    throw new Error('Method not implemented.');
+    this.errorMsg = message;
+    setTimeout(() => (this.errorMsg = null), 5000);
   }
 
   createRule(): void {
-    this.api.createRule(this.newRule).subscribe(() => {
-      this.newRule = { name: '', ruleJson: '{}', version: 1 };
-      this.loadRules();
+    this.api.createRule(this.newRule).subscribe({
+      next: () => {
+        this.newRule = { name: '', ruleJson: '{}', version: 1 };
+        this.cd.detectChanges();
+        this.loadRules();
+      },
+      error: () => {
+        this.cd.detectChanges();
+      },
     });
   }
 
+  requestDeleteRule(id: number): void {
+    if (!id) return;
+    this.pendingDelete = { type: 'rule', id };
+    this.confirmTitle = 'Delete rule?';
+    this.confirmMessage = 'This rule version will be permanently removed.';
+    this.confirmOpen = true;
+  }
+
   deleteRule(id: number): void {
-    this.api.deleteRule(id).subscribe(() => this.loadRules());
+    this.api.deleteRule(id).subscribe({
+      next: () => {
+        this.cd.detectChanges();
+        this.loadRules();
+      },
+      error: () => {
+        this.cd.detectChanges();
+      },
+    });
   }
 
   loadPricing(): void {
@@ -56,18 +87,60 @@ export class AdminRulesComponent implements OnInit {
         this.pricingTables = r;
         this.cd.detectChanges();
       },
-      error: () => this.showError('Failed to load pricing tables.'),
+      error: () => {
+        this.showError('Failed to load pricing tables.');
+        this.cd.detectChanges();
+      },
     });
   }
 
   createPricing(): void {
-    this.api.createPricingTable(this.newPricing).subscribe(() => {
-      this.newPricing = { name: '', pricingJson: '{}', version: 1 };
-      this.loadPricing();
+    this.api.createPricingTable(this.newPricing).subscribe({
+      next: () => {
+        this.newPricing = { name: '', pricingJson: '{}', version: 1 };
+        this.cd.detectChanges();
+        this.loadPricing();
+      },
+      error: () => {
+        this.cd.detectChanges();
+      },
     });
   }
 
+  requestDeletePricing(id: number): void {
+    if (!id) return;
+    this.pendingDelete = { type: 'pricing', id };
+    this.confirmTitle = 'Delete pricing table?';
+    this.confirmMessage = 'This pricing version will be permanently removed.';
+    this.confirmOpen = true;
+  }
+
   deletePricing(id: number): void {
-    this.api.deletePricingTable(id).subscribe(() => this.loadPricing());
+    this.api.deletePricingTable(id).subscribe({
+      next: () => {
+        this.cd.detectChanges();
+        this.loadPricing();
+      },
+      error: () => {
+        this.cd.detectChanges();
+      },
+    });
+  }
+
+  cancelDelete(): void {
+    this.confirmOpen = false;
+    this.pendingDelete = null;
+  }
+
+  confirmDelete(): void {
+    if (!this.pendingDelete) return;
+    const { type, id } = this.pendingDelete;
+    this.confirmOpen = false;
+    this.pendingDelete = null;
+    if (type === 'rule') {
+      this.deleteRule(id);
+      return;
+    }
+    this.deletePricing(id);
   }
 }

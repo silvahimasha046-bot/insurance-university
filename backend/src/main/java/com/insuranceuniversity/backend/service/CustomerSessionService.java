@@ -14,11 +14,14 @@ import com.insuranceuniversity.backend.repository.CustomerSessionRepository;
 import com.insuranceuniversity.backend.repository.EligibilityRuleRepository;
 import com.insuranceuniversity.backend.repository.RecommendationRunRepository;
 import com.insuranceuniversity.backend.repository.SessionLogRepository;
+import lombok.extern.log4j.Log4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -42,6 +45,9 @@ public class CustomerSessionService {
     private final AiEngineClient aiEngineClient;
     private final EligibilityRuleRepository eligibilityRuleRepo;
     private final ObjectMapper objectMapper;
+
+    @Value("${app.premium.taxRate:0.0}")
+    private double premiumTaxRate;
 
     public CustomerSessionService(
             CustomerSessionRepository sessionRepo,
@@ -148,6 +154,7 @@ public class CustomerSessionService {
 
         // Build feature map from stored answers
         Map<String, Object> features = buildFeatures(sessionId);
+        features.putIfAbsent("taxRate", premiumTaxRate);
 
         // Load products and apply eligibility rules
         List<ProductEntity> products = productService.listProducts();
@@ -164,6 +171,7 @@ public class CustomerSessionService {
             reqData.put("features", features);
             reqData.put("products", productMaps);
             requestJson = objectMapper.writeValueAsString(reqData);
+            log.info("Request for on AI-Engine - {}",reqData);
         } catch (JsonProcessingException e) {
             requestJson = "{}";
         }
@@ -259,7 +267,13 @@ public class CustomerSessionService {
         Map<String, Object> m = new HashMap<>();
         m.put("code", p.getCode());
         m.put("name", p.getName());
-        m.put("basePremium", p.getBasePremium());
+        BigDecimal basePremium = p.getBasePremium();
+        if (basePremium == null || basePremium.compareTo(BigDecimal.ZERO) <= 0) {
+            log.warn("Invalid basePremium for product code={} value={}. Sending fallback marker value 0.0", p.getCode(), basePremium);
+            m.put("basePremium", 0.0);
+        } else {
+            m.put("basePremium", basePremium);
+        }
         if (p.getTagsJson() != null && !p.getTagsJson().isBlank()) {
             try {
                 List<String> tags = objectMapper.readValue(p.getTagsJson(), new TypeReference<>() {});

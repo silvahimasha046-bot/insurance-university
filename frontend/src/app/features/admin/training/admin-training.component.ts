@@ -30,6 +30,7 @@ export class AdminTrainingComponent implements OnInit {
 
   trainResultDatasetName: string | null = null;
   trainError: string | null = null;
+  errorMsg: string | null = null;
 
   constructor(
     private api: AdminApiService,
@@ -47,11 +48,15 @@ export class AdminTrainingComponent implements OnInit {
         this.datasets = d;
         this.cd.detectChanges();
       },
-      error: () => this.showError('Failed to load datasets.'),
+      error: () => {
+        this.showError('Failed to load datasets.');
+        this.cd.detectChanges();
+      },
     });
   }
   showError(message: string): void {
-    throw new Error('Method not implemented.');
+    this.errorMsg = message;
+    setTimeout(() => (this.errorMsg = null), 5000);
   }
 
   onFileSelected(event: Event): void {
@@ -72,10 +77,12 @@ export class AdminTrainingComponent implements OnInit {
         this.loadDatasets();
         this.loadModels();
         this.handleTrainResult(res?.trainResult ?? null, filename);
+        this.cd.detectChanges();
       },
       error: (error) => {
         this.uploading = false;
         this.trainError = this.buildApiErrorMessage(error as HttpErrorResponse, 'Dataset upload failed. Please try again.');
+        this.cd.detectChanges();
       },
     });
   }
@@ -89,10 +96,12 @@ export class AdminTrainingComponent implements OnInit {
         this.retrainingId = null;
         this.loadModels();
         this.handleTrainResult(res?.trainResult ?? null, dataset.originalFilename);
+        this.cd.detectChanges();
       },
       error: (error) => {
         this.retrainingId = null;
         this.trainError = this.buildApiErrorMessage(error as HttpErrorResponse, 'Re-training failed. Ensure the AI engine is running.');
+        this.cd.detectChanges();
       },
     });
   }
@@ -184,11 +193,22 @@ export class AdminTrainingComponent implements OnInit {
         this.models = m;
         this.cd.detectChanges();
       },
-      error: () => this.showError('Failed to load models.'),
+      error: () => {
+        this.showError('Failed to load models.');
+        this.cd.detectChanges();
+      },
     });
   }
 
   promoteModel(id: number): void {
-    this.api.promoteModel(id).subscribe(() => this.loadModels());
+    this.api.promoteModel(id).subscribe({
+      next: () => {
+        this.cd.detectChanges();
+        this.loadModels();
+      },
+      error: () => {
+        this.cd.detectChanges();
+      },
+    });
   }
 }

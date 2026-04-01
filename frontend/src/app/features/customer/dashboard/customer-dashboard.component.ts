@@ -46,7 +46,9 @@ export class CustomerDashboardComponent implements OnInit {
           if (token) {
             this.auth.storeSession(token, profile.name, profile.email);
           }
+          this.cd.detectChanges();
         },
+        error: () => this.cd.detectChanges(),
       });
     }
 
@@ -61,7 +63,7 @@ export class CustomerDashboardComponent implements OnInit {
         take(1),
         finalize(() => {
           this.sessionsLoading = false;
-          this.cd.markForCheck();
+          this.cd.detectChanges();
           console.log("Session Loading:", this.sessionsLoading);
         })
       ).subscribe({
@@ -69,10 +71,12 @@ export class CustomerDashboardComponent implements OnInit {
         this.sessions = data as CustomerSession[];
         console.log("Loaded sessions:", this.sessions);
         console.log("Session Loading:", this.sessionsLoading);
+        this.cd.detectChanges();
       },
       error: () => {
         this.sessionsError = true;
         console.log("Failed to load sessions.");
+        this.cd.detectChanges();
       },
     });
   }
