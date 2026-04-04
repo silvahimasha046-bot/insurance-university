@@ -19,6 +19,12 @@ function hasSelectedPlan(state: WizardStateService) {
   return Boolean(state.snapshot.selectedPlan?.id);
 }
 
+function hasAuthenticatedSession(): boolean {
+  return Boolean(
+    localStorage.getItem("insurance_auth_token") && localStorage.getItem("insurance_customer_session_id")
+  );
+}
+
 export const wizardProgressGuard =
   (required: "step-1" | "step-2" | "step-3" | "plan"): CanMatchFn =>
   () => {
@@ -33,6 +39,11 @@ export const wizardProgressGuard =
           : required === "step-3"
             ? hasStep1(state) && hasStep2(state)
             : hasStep1(state) && hasStep2(state) && hasStep3(state) && hasSelectedPlan(state);
+
+    // Post-login journey allows session-driven entry from dashboard.
+    if (!ok && (required === "step-3" || required === "plan") && hasAuthenticatedSession()) {
+      return true;
+    }
 
     if (ok) return true;
 

@@ -8,6 +8,7 @@ import {
   FollowUpQuestion,
   RankedProduct,
 } from "../../core/customer-api.service";
+import { CustomerAuthService } from "../../core/services/customer-auth.service";
 
 @Component({
   selector: "app-recommendations",
@@ -25,21 +26,29 @@ export class RecommendationsComponent implements OnInit {
   error: string | null = null;
   followUpError: string | null = null;
   expandedCards = new Set<string>();
+  isLoggedIn = false;
 
   constructor(
     private wizard: WizardStateService,
     private router: Router,
     private customerApi: CustomerApiService,
+    private auth: CustomerAuthService,
     private cd: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
+    this.isLoggedIn = this.auth.isLoggedIn();
     this.followUpAnswers = {
       ...(this.wizard.snapshot.recommendationContext?.followUpAnswers ?? {}),
     };
     const sessionId = this.customerApi.getStoredSessionId();
     if (sessionId) {
       this.loadRecommendations(sessionId);
+      return;
+    }
+
+    if (this.isLoggedIn) {
+      this.router.navigateByUrl("/customer/dashboard");
     }
   }
 

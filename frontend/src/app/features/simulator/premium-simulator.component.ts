@@ -3,6 +3,7 @@ import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { WizardStateService } from '../../core/state/wizard-state.service';
+import { CustomerAuthService } from '../../core/services/customer-auth.service';
 
 @Component({
   standalone: true,
@@ -15,8 +16,10 @@ export class PremiumSimulatorComponent {
   coverageMultiplier = 1.0;
   addCriticalIllness = false;
   addAccidentRider = false;
+  isLoggedIn = false;
 
-  constructor(private wizard: WizardStateService) {
+  constructor(private wizard: WizardStateService, private auth: CustomerAuthService) {
+    this.isLoggedIn = this.auth.isLoggedIn();
     const plan = wizard.snapshot.selectedPlan;
     if (plan?.premiumLkrPerMonth) {
       this.basePremium = plan.premiumLkrPerMonth;

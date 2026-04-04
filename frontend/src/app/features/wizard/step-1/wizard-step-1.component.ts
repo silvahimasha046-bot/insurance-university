@@ -4,6 +4,7 @@ import { FormsModule } from "@angular/forms";
 import { CommonModule } from "@angular/common";
 import { WizardStateService } from "../../../core/state/wizard-state.service";
 import { CustomerApiService } from "../../../core/customer-api.service";
+import { CustomerAuthService } from "../../../core/services/customer-auth.service";
 
 const CONSENT_KEY = "insurance_privacy_consent_v1";
 
@@ -23,10 +24,12 @@ export class WizardStep1Component implements OnInit {
 
   showConsentModal = false;
   isLoggedIn = false;
+  activeSessionStartedAt: string | null = null;
 
   constructor(
     private wizard: WizardStateService,
     private customerApi: CustomerApiService,
+    private auth: CustomerAuthService,
     private router: Router,
     private cd: ChangeDetectorRef
   ) {
@@ -40,7 +43,10 @@ export class WizardStep1Component implements OnInit {
   }
 
   ngOnInit(): void {
-    this.isLoggedIn = !!localStorage.getItem("insurance_auth_token");
+    this.isLoggedIn = this.auth.isLoggedIn();
+    const activeMeta = this.customerApi.getActiveSessionMeta();
+    this.activeSessionStartedAt = activeMeta?.createdAt ?? null;
+
     if (!localStorage.getItem(CONSENT_KEY)) {
       this.showConsentModal = true;
     }
@@ -65,6 +71,14 @@ export class WizardStep1Component implements OnInit {
   }
 
   declineConsent(): void {
+    this.router.navigateByUrl("/");
+  }
+
+  back(): void {
+    if (this.isLoggedIn) {
+      this.router.navigateByUrl("/customer/dashboard");
+      return;
+    }
     this.router.navigateByUrl("/");
   }
 

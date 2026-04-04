@@ -6,8 +6,8 @@
       <div class="flex items-center justify-between h-16">
         <!-- Logo -->
         <a routerLink="/" class="flex items-center gap-2 no-underline">
-          <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-primary text-white text-sm font-extrabold">IU</span>
-          <span class="text-gray-900 dark:text-white font-bold text-lg">Insurance University</span>
+          <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-primary text-white text-sm font-extrabold">IA</span>
+          <span class="text-gray-900 dark:text-white font-bold text-lg">Insure AI</span>
         </a>
         <!-- User info + Sign out -->
         <div class="flex items-center gap-4">
@@ -36,7 +36,7 @@
         Welcome back, {{ userName || 'there' }}! 👋
       </h1>
       <p class="mt-1 text-gray-500 dark:text-gray-400">
-        Here's what you can do today with your Insurance University account.
+        Here's what you can do today with your Insurance account.
       </p>
     </div>
 
@@ -44,7 +44,7 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
 
       <!-- Start Assessment -->
-      <a routerLink="/wizard/step-1"
+      <button type="button" (click)="startAssessment()"
          class="group block rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6 shadow-sm hover:shadow-md hover:border-primary dark:hover:border-primary transition-all no-underline">
         <div class="flex items-center gap-4 mb-3">
           <div class="w-12 h-12 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
@@ -57,10 +57,10 @@
         <p class="text-sm text-gray-500 dark:text-gray-400">
           Answer a few questions so we can understand your insurance needs and recommend the best plans.
         </p>
-      </a>
+      </button>
 
       <!-- View Recommendations -->
-      <a routerLink="/recommendations"
+      <button type="button" (click)="openSessionPicker('recommendations')"
          class="group block rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6 shadow-sm hover:shadow-md hover:border-primary dark:hover:border-primary transition-all no-underline">
         <div class="flex items-center gap-4 mb-3">
           <div class="w-12 h-12 rounded-lg bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
@@ -73,10 +73,10 @@
         <p class="text-sm text-gray-500 dark:text-gray-400">
           Review your personalised insurance plan recommendations based on your profile.
         </p>
-      </a>
+      </button>
 
       <!-- Premium Simulator -->
-      <a routerLink="/simulator"
+      <button type="button" (click)="openSessionPicker('simulator')"
          class="group block rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6 shadow-sm hover:shadow-md hover:border-primary dark:hover:border-primary transition-all no-underline">
         <div class="flex items-center gap-4 mb-3">
           <div class="w-12 h-12 rounded-lg bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center">
@@ -89,7 +89,7 @@
         <p class="text-sm text-gray-500 dark:text-gray-400">
           Estimate your monthly premium and explore different coverage scenarios before committing.
         </p>
-      </a>
+      </button>
 
       <!-- Upload Proposal -->
       <a routerLink="/proposal/upload"
@@ -108,7 +108,7 @@
       </a>
 
       <!-- Compare Plans -->
-      <a routerLink="/recommendations/compare"
+      <button type="button" (click)="openSessionPicker('compare')"
          class="group block rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6 shadow-sm hover:shadow-md hover:border-primary dark:hover:border-primary transition-all no-underline">
         <div class="flex items-center gap-4 mb-3">
           <div class="w-12 h-12 rounded-lg bg-cyan-100 dark:bg-cyan-900/40 flex items-center justify-center">
@@ -121,7 +121,7 @@
         <p class="text-sm text-gray-500 dark:text-gray-400">
           Compare multiple insurance plans side by side to make an informed decision.
         </p>
-      </a>
+      </button>
 
       <!-- Feedback Survey -->
       <a routerLink="/survey"
@@ -188,11 +188,11 @@
         <div class="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-500">
           <span class="material-symbols-outlined text-4xl mb-3">history</span>
           <p class="text-sm">No sessions yet. Start an assessment to see your history here.</p>
-          <a routerLink="/wizard/step-1"
+          <button type="button" (click)="startAssessment()"
              class="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline no-underline">
             <span class="material-symbols-outlined text-base">add</span>
             Start your first assessment
-          </a>
+          </button>
         </div>
       }
 
@@ -241,15 +241,15 @@
                   <!-- Actions -->
                   <td class="px-6 py-4">
                     @if (session.status === 'COMPLETED') {
-                      <a routerLink="/recommendations"
+                      <button type="button" (click)="viewResults(session)"
                          class="text-blue-600 dark:text-blue-400 hover:underline font-medium no-underline">
                         View Results
-                      </a>
+                      </button>
                     } @else {
-                      <a routerLink="/wizard/step-1"
+                      <button type="button" (click)="continueSession(session)"
                          class="text-primary hover:underline font-medium no-underline">
                         Continue
-                      </a>
+                      </button>
                     }
                   </td>
                 </tr>
@@ -258,6 +258,36 @@
           </table>
         </div>
       }
+    </div>
+
+    <div *ngIf="showSessionPicker" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="w-full max-w-lg rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-2xl">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+          <h3 class="text-lg font-semibold">Select Session (Date & Time)</h3>
+          <button type="button" (click)="closeSessionPicker()" class="text-sm text-gray-500 hover:text-primary">Close</button>
+        </div>
+
+        <div class="p-6">
+          <div *ngIf="pickerLoading" class="text-sm text-gray-500 dark:text-gray-400">Loading sessions...</div>
+          <div *ngIf="!pickerLoading && pickerError" class="text-sm text-red-500">Unable to load sessions. Please try again.</div>
+          <div *ngIf="!pickerLoading && !pickerError && sessions.length === 0" class="text-sm text-gray-500 dark:text-gray-400">
+            No sessions found. Start Assessment first.
+          </div>
+
+          <div *ngIf="!pickerLoading && !pickerError && sessions.length > 0" class="space-y-2 max-h-80 overflow-y-auto">
+            <button
+              *ngFor="let session of sessions"
+              type="button"
+              (click)="selectSessionAndNavigate(session)"
+              class="w-full text-left rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-3 hover:border-primary hover:bg-primary/5 transition-colors"
+            >
+              <p class="font-mono text-xs text-gray-500 dark:text-gray-400">{{ session.sessionId }}</p>
+              <p class="text-sm font-semibold mt-1">{{ formatDate(session.createdAt) }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Updated {{ formatDate(session.updatedAt) }}</p>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
   </main>

@@ -3,7 +3,8 @@
     <div class="flex size-12 items-center cursor-pointer" routerLink="/recommendations">
       <span class="material-symbols-outlined text-primary dark:text-white">arrow_back</span>
     </div>
-    <h2 class="text-gray-900 dark:text-white text-lg font-bold flex-1 text-center pr-12">Premium Simulator</h2>
+    <h2 class="text-gray-900 dark:text-white text-lg font-bold flex-1 text-center">Premium Simulator</h2>
+    <a *ngIf="isLoggedIn" routerLink="/customer/dashboard" class="text-xs font-semibold text-primary no-underline">Back Home</a>
   </div>
 
   <div class="p-4 max-w-xl mx-auto text-gray-900 dark:text-white">

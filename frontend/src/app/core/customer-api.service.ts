@@ -4,6 +4,19 @@ import { Observable } from "rxjs";
 
 const BASE_URL = "http://localhost:8080/api";
 const SESSION_KEY = "insurance_customer_session_id";
+const ACTIVE_SESSION_META_KEY = "insurance_customer_session_meta";
+
+export interface CustomerSession {
+  sessionId: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ActiveSessionMeta {
+  sessionId: string;
+  createdAt: string;
+}
 
 export interface RankedProduct {
   code: string;
@@ -84,9 +97,24 @@ export class CustomerApiService {
     localStorage.setItem(SESSION_KEY, sessionId);
   }
 
+  /** Store active session metadata used by post-login journey screens. */
+  storeActiveSessionMeta(meta: ActiveSessionMeta): void {
+    localStorage.setItem(ACTIVE_SESSION_META_KEY, JSON.stringify(meta));
+  }
+
   /** Retrieve stored sessionId from localStorage. */
   getStoredSessionId(): string | null {
     return localStorage.getItem(SESSION_KEY);
+  }
+
+  /** Retrieve active session metadata from localStorage. */
+  getActiveSessionMeta(): ActiveSessionMeta | null {
+    try {
+      const raw = localStorage.getItem(ACTIVE_SESSION_META_KEY);
+      return raw ? (JSON.parse(raw) as ActiveSessionMeta) : null;
+    } catch {
+      return null;
+    }
   }
 
   /** Submit wizard answers for the given session. */
@@ -111,7 +139,7 @@ export class CustomerApiService {
   }
 
   /** List past sessions for the authenticated user. */
-  listSessions(): Observable<any[]> {
-    return this.http.get<any[]>(`${BASE_URL}/customer/sessions`);
+  listSessions(): Observable<CustomerSession[]> {
+    return this.http.get<CustomerSession[]>(`${BASE_URL}/customer/sessions`);
   }
 }

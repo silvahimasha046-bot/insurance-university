@@ -112,14 +112,16 @@ export class WizardStep3Component implements OnInit {
           flyingActivity: this.flyingActivity,
         })
         .subscribe({
-          next: () => this.cd.detectChanges(),
+          next: () => { 
+            this.cd.detectChanges(); 
+            this.router.navigateByUrl("/recommendations");
+          },
           error: (err) => {
             console.warn("Could not save step-3 answers", err);
             this.cd.detectChanges();
           },
         });
     }
-    this.router.navigateByUrl("/recommendations");
   }
 }
 

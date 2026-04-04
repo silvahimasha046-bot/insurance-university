@@ -3,6 +3,7 @@ import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { CustomerAuthService } from '../../core/services/customer-auth.service';
 
 @Component({
   standalone: true,
@@ -19,7 +20,8 @@ export class SurveyComponent {
   constructor(
     private http: HttpClient,
     private router: Router,
-    private cd: ChangeDetectorRef
+    private cd: ChangeDetectorRef,
+    private auth: CustomerAuthService
   ) {}
 
   submitFeedback(): void {
@@ -46,6 +48,7 @@ export class SurveyComponent {
 
   private finish(): void {
     this.submitted = true;
-    setTimeout(() => this.router.navigateByUrl('/'), 1200);
+    const redirectUrl = this.auth.isLoggedIn() ? '/customer/dashboard' : '/';
+    setTimeout(() => this.router.navigateByUrl(redirectUrl), 1200);
   }
 }

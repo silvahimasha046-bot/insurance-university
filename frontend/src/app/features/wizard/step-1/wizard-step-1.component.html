@@ -37,7 +37,7 @@
 
   <div class="w-full max-w-[430px] min-h-screen border-x border-gray-200 dark:border-gray-800">
     <header class="flex items-center p-4 justify-between sticky top-0 bg-background-light dark:bg-background-dark z-10">
-      <div class="flex size-12 items-center cursor-pointer" routerLink="/">
+      <div class="flex size-12 items-center cursor-pointer" (click)="back()">
         <span class="material-symbols-outlined text-gray-900 dark:text-white">arrow_back</span>
       </div>
       <h2 class="text-gray-900 dark:text-white text-lg font-bold flex-1 text-center">Intake Wizard</h2>
@@ -64,6 +64,9 @@
       </h1>
       <p class="text-gray-600 dark:text-[#92adc9] text-center mb-6 text-sm">
         Help us understand your insurance needs.
+      </p>
+      <p *ngIf="isLoggedIn && activeSessionStartedAt" class="text-center text-xs text-gray-500 dark:text-[#92adc9] mb-4">
+        Session started: {{ activeSessionStartedAt | date:'medium' }}
       </p>
 
       <!-- Needs text -->
