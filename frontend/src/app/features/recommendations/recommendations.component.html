@@ -1,11 +1,11 @@
 <div class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-white min-h-screen">
   <header class="sticky top-0 z-50 bg-background-light dark:bg-background-dark border-b border-slate-200 dark:border-slate-800">
     <div class="flex items-center p-3 justify-between">
-      <div class="flex size-12 items-center cursor-pointer" routerLink="/wizard/step-3">
+      <div class="flex size-12 items-center cursor-pointer" (click)="goBack()">
         <span class="material-symbols-outlined">arrow_back</span>
       </div>
       <h2 class="text-lg font-bold flex-1 text-center">Policy Results</h2>
-      <div class="flex w-24 items-center justify-end gap-2">
+      <div class="flex w-24 items-center justify-end gap-2" *ngIf="!isDashboardJourney">
         <a *ngIf="isLoggedIn" routerLink="/customer/dashboard" class="text-xs font-semibold text-primary no-underline">Back Home</a>
         <span class="material-symbols-outlined">search</span>
       </div>
@@ -108,7 +108,8 @@
       <span class="material-symbols-outlined text-4xl text-slate-400">search_off</span>
       <p class="mt-2 font-semibold">No matching products found</p>
       <p class="text-sm text-slate-500 dark:text-[#92adc9] mt-1">Please contact an advisor for a referral.</p>
-      <a class="mt-4 inline-block text-primary font-bold text-sm" routerLink="/wizard/step-1">Start Over</a>
+      <a *ngIf="!isDashboardJourney" class="mt-4 inline-block text-primary font-bold text-sm" routerLink="/wizard/step-1">Start Over</a>
+      <a *ngIf="isDashboardJourney" class="mt-4 inline-block text-primary font-bold text-sm" routerLink="/customer/dashboard">Back to Dashboard</a>
     </div>
 
     <!-- Top 3 recommendation cards -->
@@ -175,26 +176,99 @@
       </div>
 
       <div *ngIf="isExpanded(product.code)" class="px-4 pb-4 border-t border-slate-200 dark:border-slate-700">
-        <div class="mt-3 grid grid-cols-1 gap-3">
-          <div *ngIf="product.productMetadata?.howItWorks" class="rounded-lg bg-slate-50 dark:bg-slate-900/50 p-3">
-            <p class="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">How It Works</p>
-            <p class="text-xs text-slate-500 dark:text-slate-400 whitespace-pre-wrap">{{ product.productMetadata?.howItWorks }}</p>
+        <div class="mt-3 space-y-3">
+
+          <!-- How It Works -->
+          <div *ngIf="product.productMetadata?.howItWorks" class="rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3">
+            <p class="text-xs font-bold text-slate-600 dark:text-slate-300 mb-1 uppercase tracking-wider">How It Works</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 whitespace-pre-wrap leading-relaxed">{{ product.productMetadata?.howItWorks }}</p>
           </div>
 
-          <div *ngIf="product.productMetadata?.benefits?.length" class="rounded-lg bg-slate-50 dark:bg-slate-900/50 p-3">
-            <p class="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Benefits</p>
-            <pre class="text-xs text-slate-500 dark:text-slate-400 whitespace-pre-wrap overflow-auto">{{ product.productMetadata?.benefits | json }}</pre>
+          <!-- Benefits — icon cards -->
+          <div *ngIf="product.productMetadata?.benefits?.length" class="rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3">
+            <p class="text-xs font-bold text-slate-600 dark:text-slate-300 mb-2 uppercase tracking-wider">What You're Covered For</p>
+            <div class="space-y-2">
+              <div *ngFor="let b of product.productMetadata?.benefits"
+                   class="flex items-start gap-2 bg-white dark:bg-slate-800/50 rounded-lg p-2 border-l-[3px] border-teal-400">
+                <span class="material-symbols-outlined text-base leading-none mt-0.5 flex-shrink-0 text-teal-500">verified</span>
+                <div class="min-w-0">
+                  <p class="text-xs font-semibold text-slate-800 dark:text-slate-100 leading-snug">{{ benefitTitle(b) }}</p>
+                  <p *ngIf="benefitDescription(b)" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">{{ benefitDescription(b) }}</p>
+                </div>
+              </div>
+            </div>
+            <p *ngIf="product.productMetadata?.additionalBenefits"
+               class="mt-2 text-xs text-slate-500 dark:text-slate-400 italic leading-relaxed">
+              {{ product.productMetadata?.additionalBenefits }}
+            </p>
           </div>
 
-          <div *ngIf="product.productMetadata?.sampleCalculations?.length" class="rounded-lg bg-slate-50 dark:bg-slate-900/50 p-3">
-            <p class="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Sample Calculations</p>
-            <pre class="text-xs text-slate-500 dark:text-slate-400 whitespace-pre-wrap overflow-auto">{{ product.productMetadata?.sampleCalculations | json }}</pre>
+          <!-- Sample Calculations — scenario cards -->
+          <div *ngIf="product.productMetadata?.sampleCalculations?.length" class="rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3">
+            <p class="text-xs font-bold text-slate-600 dark:text-slate-300 mb-2 uppercase tracking-wider">Sample Premium Scenarios</p>
+            <div class="space-y-2">
+              <div *ngFor="let calc of product.productMetadata?.sampleCalculations; let si = index"
+                   class="bg-white dark:bg-slate-800/50 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+                <p class="text-xs font-semibold text-teal-600 dark:text-teal-400 mb-2">{{ scenarioLabel(calc, si) }}</p>
+                <div class="grid grid-cols-2 gap-x-3 gap-y-1">
+                  <ng-container *ngFor="let entry of calcEntries(calc)">
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400">{{ entry.label }}</p>
+                    <p class="text-[11px] font-semibold text-slate-800 dark:text-slate-100 text-right">{{ entry.value }}</p>
+                  </ng-container>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div *ngIf="product.productMetadata?.paymentModes?.length" class="rounded-lg bg-slate-50 dark:bg-slate-900/50 p-3">
-            <p class="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Payment Modes</p>
-            <p class="text-xs text-slate-500 dark:text-slate-400">{{ product.productMetadata?.paymentModes?.join(', ') }}</p>
+          <!-- Premium Breakdown — how monthly premium is calculated -->
+          <div *ngIf="product.premiumExplanation as premiumExplanation" class="rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3">
+            <p class="text-xs font-bold text-slate-600 dark:text-slate-300 mb-3 uppercase tracking-wider">How Your Premium is Calculated</p>
+            <div class="space-y-1.5">
+              <div *ngIf="premiumExplanation.coverageComponent != null"
+                   class="flex justify-between text-xs text-slate-600 dark:text-slate-300">
+                <span>Coverage component</span>
+                <span class="font-semibold tabular-nums">Rs. {{ premiumExplanation.coverageComponent | number:'1.0-2' }}</span>
+              </div>
+              <div *ngIf="premiumExplanation.riskMultiplier != null"
+                   class="flex justify-between text-xs text-slate-600 dark:text-slate-300">
+                <span>Risk adjustment (×{{ premiumExplanation.riskMultiplier | number:'1.2-2' }})</span>
+                <span class="font-semibold tabular-nums">Rs. {{ premiumExplanation.premiumAfterRisk | number:'1.0-2' }}</span>
+              </div>
+              <ng-container *ngIf="premiumExplanation.riskBreakdown">
+                <div *ngFor="let item of objectEntries(premiumExplanation.riskBreakdown)"
+                     class="flex justify-between text-[11px] text-slate-400 dark:text-slate-500 pl-3">
+                  <span>{{ humanizeKey(item.key) }}</span>
+                  <span class="tabular-nums">{{ item.value | number:'1.2-2' }}</span>
+                </div>
+              </ng-container>
+              <div *ngIf="(premiumExplanation.selectedRiderCount ?? 0) > 0"
+                   class="flex justify-between text-xs text-slate-600 dark:text-slate-300">
+                <span>Riders ({{ premiumExplanation.selectedRiderCount }} added)</span>
+                <span class="font-semibold tabular-nums">Rs. {{ premiumExplanation.selectedRiderPremium | number:'1.0-2' }}</span>
+              </div>
+              <div *ngIf="(premiumExplanation.taxRate ?? 0) > 0"
+                   class="flex justify-between text-xs text-slate-600 dark:text-slate-300">
+                <span>Tax ({{ (premiumExplanation.taxRate ?? 0) * 100 | number:'1.0-1' }}%)</span>
+                <span class="font-semibold tabular-nums">Rs. {{ premiumExplanation.taxAmount | number:'1.0-2' }}</span>
+              </div>
+              <div class="pt-2 border-t border-slate-200 dark:border-slate-700 flex justify-between text-sm font-bold text-slate-800 dark:text-white">
+                <span>Total Monthly Premium</span>
+                <span class="text-primary tabular-nums">Rs. {{ product.monthlyPremiumEstimate | number:'1.0-0' }}</span>
+              </div>
+            </div>
           </div>
+
+          <!-- Payment Modes — pill tags -->
+          <div *ngIf="product.productMetadata?.paymentModes?.length" class="rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3">
+            <p class="text-xs font-bold text-slate-600 dark:text-slate-300 mb-2 uppercase tracking-wider">Payment Modes</p>
+            <div class="flex flex-wrap gap-2">
+              <span *ngFor="let mode of product.productMetadata?.paymentModes"
+                    class="text-xs px-2 py-1 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-medium">
+                {{ mode }}
+              </span>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -223,7 +297,7 @@
   </main>
 
   <div class="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-background-light dark:from-background-dark via-background-light/90 dark:via-background-dark/90 to-transparent">
-    <button class="w-full h-14 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold" routerLink="/recommendations/compare">
+    <button class="w-full h-14 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold" (click)="goToCompare()">
       <span class="material-symbols-outlined align-middle mr-2">compare_arrows</span>
       Compare Selected Plans
     </button>

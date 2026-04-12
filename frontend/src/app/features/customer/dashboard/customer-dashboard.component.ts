@@ -4,6 +4,7 @@ import { Router, RouterModule } from '@angular/router';
 import { CustomerAuthService } from '../../../core/services/customer-auth.service';
 import { CustomerApiService, CustomerSession } from '../../../core/customer-api.service';
 import { finalize, take } from 'rxjs';
+import { WizardStateService } from '../../../core/state/wizard-state.service';
 
 type SessionTarget = 'recommendations' | 'simulator' | 'compare';
 
@@ -18,6 +19,7 @@ export class CustomerDashboardComponent implements OnInit {
   userEmail = '';
 
   sessions: CustomerSession[] = [];
+  pickerSessions: CustomerSession[] = [];
   sessionsLoading = true;
   sessionsError = false;
 
@@ -29,9 +31,14 @@ export class CustomerDashboardComponent implements OnInit {
   constructor(
     private auth: CustomerAuthService,
     private customerApi: CustomerApiService,
+    private wizard: WizardStateService,
     private router: Router,
     private cd: ChangeDetectorRef
   ) {}
+
+  get hasCompletedSessions(): boolean {
+    return this.sessions.some((session) => session.status === 'COMPLETED');
+  }
 
   ngOnInit(): void {
     this.userName = this.auth.getUserName();
@@ -78,6 +85,10 @@ export class CustomerDashboardComponent implements OnInit {
   }
 
   startAssessment(): void {
+    this.wizard.setRecommendationsEntrySource(undefined);
+    this.wizard.setSimulatorEntrySource(undefined);
+    this.wizard.setCompareEntrySource(undefined);
+    this.wizard.setUploadEntrySource(undefined);
     this.customerApi.createSession().pipe(take(1)).subscribe({
       next: (res) => {
         const createdAt = new Date().toISOString();
@@ -90,6 +101,11 @@ export class CustomerDashboardComponent implements OnInit {
         this.cd.detectChanges();
       },
     });
+  }
+
+  openUploadProposal(): void {
+    this.wizard.setUploadEntrySource('dashboard');
+    this.router.navigateByUrl('/proposal/upload');
   }
 
   openSessionPicker(target: SessionTarget): void {
@@ -106,7 +122,11 @@ export class CustomerDashboardComponent implements OnInit {
       })
     ).subscribe({
       next: (data) => {
-        this.sessions = data;
+        if (target === 'recommendations' || target === 'simulator' || target === 'compare') {
+          this.pickerSessions = data.filter((session) => session.status === 'COMPLETED');
+        } else {
+          this.pickerSessions = data;
+        }
       },
       error: () => {
         this.pickerError = true;
@@ -126,6 +146,24 @@ export class CustomerDashboardComponent implements OnInit {
     });
     this.showSessionPicker = false;
 
+    if (this.pickerTarget === 'recommendations' || this.pickerTarget === 'compare') {
+      this.wizard.setRecommendationsEntrySource('dashboard');
+    } else {
+      this.wizard.setRecommendationsEntrySource(undefined);
+    }
+
+    if (this.pickerTarget === 'simulator') {
+      this.wizard.setSimulatorEntrySource('dashboard');
+    } else {
+      this.wizard.setSimulatorEntrySource(undefined);
+    }
+
+    if (this.pickerTarget === 'compare') {
+      this.wizard.setCompareEntrySource('dashboard');
+    } else {
+      this.wizard.setCompareEntrySource(undefined);
+    }
+
     if (this.pickerTarget === 'simulator') {
       this.router.navigateByUrl('/simulator');
       return;
@@ -143,6 +181,10 @@ export class CustomerDashboardComponent implements OnInit {
       sessionId: session.sessionId,
       createdAt: session.createdAt,
     });
+    this.wizard.setRecommendationsEntrySource('dashboard');
+    this.wizard.setSimulatorEntrySource(undefined);
+    this.wizard.setCompareEntrySource(undefined);
+    this.wizard.setUploadEntrySource(undefined);
     this.router.navigateByUrl('/recommendations');
   }
 
@@ -152,6 +194,10 @@ export class CustomerDashboardComponent implements OnInit {
       sessionId: session.sessionId,
       createdAt: session.createdAt,
     });
+    this.wizard.setRecommendationsEntrySource(undefined);
+    this.wizard.setSimulatorEntrySource(undefined);
+    this.wizard.setCompareEntrySource(undefined);
+    this.wizard.setUploadEntrySource(undefined);
     this.router.navigateByUrl('/wizard/step-1');
   }
 
@@ -165,6 +211,10 @@ export class CustomerDashboardComponent implements OnInit {
   }
 
   logout(): void {
+    this.wizard.setRecommendationsEntrySource(undefined);
+    this.wizard.setSimulatorEntrySource(undefined);
+    this.wizard.setCompareEntrySource(undefined);
+    this.wizard.setUploadEntrySource(undefined);
     this.auth.logout();
   }
 }

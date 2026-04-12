@@ -138,6 +138,14 @@ export class CustomerApiService {
     return this.http.delete<void>(`${BASE_URL}/customer/sessions/${sessionId}`);
   }
 
+  /** Mark a session as completed. */
+  completeSession(sessionId: string): Observable<{ sessionId: string; status: string; updatedAt: string }> {
+    return this.http.patch<{ sessionId: string; status: string; updatedAt: string }>(
+      `${BASE_URL}/customer/sessions/${sessionId}/complete`,
+      {}
+    );
+  }
+
   /** List past sessions for the authenticated user. */
   listSessions(): Observable<CustomerSession[]> {
     return this.http.get<CustomerSession[]>(`${BASE_URL}/customer/sessions`);

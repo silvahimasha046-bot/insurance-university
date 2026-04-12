@@ -1,6 +1,6 @@
 <div class="bg-background-dark font-display min-h-screen text-white">
   <div class="sticky top-0 z-10 flex items-center p-4 justify-between border-b border-[#324d67]/30 bg-background-dark/95 backdrop-blur">
-    <div class="flex size-12 items-center cursor-pointer" routerLink="/recommendations/compare">
+    <div class="flex size-12 items-center cursor-pointer" (click)="goBack()">
       <span class="material-symbols-outlined">arrow_back</span>
     </div>
     <h2 class="text-lg font-bold flex-1 text-center pr-12">Step 3 of 4</h2>
@@ -71,7 +71,7 @@
   </div>
 
   <div class="fixed bottom-0 left-0 right-0 p-4 bg-background-dark/95 border-t border-[#324d67]/30 flex gap-3">
-    <button class="flex-1 h-12 rounded-xl bg-[#233648] font-bold" routerLink="/recommendations/compare">Previous</button>
+    <button *ngIf="!isDashboardJourney" class="flex-1 h-12 rounded-xl bg-[#233648] font-bold" routerLink="/recommendations/compare">Previous</button>
     <button (click)="submit()" class="flex-[2] h-12 rounded-xl bg-primary font-bold">Submit &amp; Finalize</button>
   </div>
 </div>

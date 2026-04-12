@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { WizardStateService } from '../../core/state/wizard-state.service';
@@ -17,9 +17,18 @@ export class PremiumSimulatorComponent {
   addCriticalIllness = false;
   addAccidentRider = false;
   isLoggedIn = false;
+  isDashboardJourney = false;
 
-  constructor(private wizard: WizardStateService, private auth: CustomerAuthService) {
+  constructor(
+    private wizard: WizardStateService,
+    private auth: CustomerAuthService,
+    private router: Router
+  ) {
     this.isLoggedIn = this.auth.isLoggedIn();
+    this.isDashboardJourney = this.wizard.snapshot.simulatorEntrySource === 'dashboard';
+    if (!this.isDashboardJourney) {
+      this.wizard.setSimulatorEntrySource('wizard');
+    }
     const plan = wizard.snapshot.selectedPlan;
     if (plan?.premiumLkrPerMonth) {
       this.basePremium = plan.premiumLkrPerMonth;
@@ -35,5 +44,18 @@ export class PremiumSimulatorComponent {
 
   get coverageLabel(): string {
     return `${this.coverageMultiplier.toFixed(1)}×`;
+  }
+
+  goBack(): void {
+    if (this.isDashboardJourney) {
+      this.router.navigateByUrl('/customer/dashboard');
+      return;
+    }
+    this.router.navigateByUrl('/recommendations');
+  }
+
+  applyWithQuote(): void {
+    this.wizard.setUploadEntrySource(undefined);
+    this.router.navigateByUrl('/proposal/upload');
   }
 }

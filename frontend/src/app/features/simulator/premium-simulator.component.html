@@ -1,10 +1,10 @@
 <div class="bg-background-light dark:bg-background-dark font-display min-h-screen text-white">
   <div class="sticky top-0 z-10 flex items-center p-4 justify-between border-b border-gray-200 dark:border-gray-800 bg-background-light dark:bg-background-dark">
-    <div class="flex size-12 items-center cursor-pointer" routerLink="/recommendations">
+    <div class="flex size-12 items-center cursor-pointer" (click)="goBack()">
       <span class="material-symbols-outlined text-primary dark:text-white">arrow_back</span>
     </div>
     <h2 class="text-gray-900 dark:text-white text-lg font-bold flex-1 text-center">Premium Simulator</h2>
-    <a *ngIf="isLoggedIn" routerLink="/customer/dashboard" class="text-xs font-semibold text-primary no-underline">Back Home</a>
+    <a *ngIf="isLoggedIn && !isDashboardJourney" routerLink="/customer/dashboard" class="text-xs font-semibold text-primary no-underline">Back Home</a>
   </div>
 
   <div class="p-4 max-w-xl mx-auto text-gray-900 dark:text-white">
@@ -67,10 +67,10 @@
 
     <!-- Premium breakdown -->
     <div class="mt-6 rounded-xl border border-gray-200 dark:border-gray-800 p-4 space-y-2 text-sm">
-      <div class="flex justify-between">
+      <!-- <div class="flex justify-between">
         <span class="text-gray-500 dark:text-[#92adc9]">Base Premium</span>
         <span class="font-semibold">Rs. {{ basePremium | number:'1.0-0' }}</span>
-      </div>
+      </div> -->
       <div class="flex justify-between">
         <span class="text-gray-500 dark:text-[#92adc9]">Coverage Multiplier ({{ coverageLabel }})</span>
         <span class="font-semibold">Rs. {{ (basePremium * coverageMultiplier) | number:'1.0-0' }}</span>
@@ -89,12 +89,12 @@
       </div>
     </div>
 
-    <div class="mt-6 flex flex-col gap-3">
-      <button class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-xl" routerLink="/proposal/upload">
-        Apply with this Quote
+    <div *ngIf="!isDashboardJourney" class="mt-6 flex flex-col gap-3">
+      <button class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-xl" (click)="applyWithQuote()">
+        Apply with this Quota
       </button>
-      <button class="w-full border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white font-bold py-4 rounded-xl" routerLink="/recommendations">
-        Save for Later
+      <button class="w-full border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white font-bold py-4 rounded-xl" (click)="goBack()">
+        Back to Recommendations
       </button>
     </div>
   </div>

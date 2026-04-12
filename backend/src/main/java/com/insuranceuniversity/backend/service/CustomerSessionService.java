@@ -117,6 +117,22 @@ public class CustomerSessionService {
         sessionRepo.deleteById(sessionId);
     }
 
+    /** Mark a session as COMPLETED (called when user ends session from proposal summary). */
+    @Transactional
+    public Map<String, Object> completeSession(String sessionId) {
+        CustomerSessionEntity session = sessionRepo.findById(sessionId)
+                .orElseThrow(() -> new IllegalArgumentException("Session not found: " + sessionId));
+        session.setStatus("COMPLETED");
+        session.setUpdatedAt(LocalDateTime.now());
+        sessionRepo.save(session);
+        writeSessionLog(sessionId, "SESSION_COMPLETED", null);
+        Map<String, Object> result = new HashMap<>();
+        result.put("sessionId", session.getId());
+        result.put("status", session.getStatus());
+        result.put("updatedAt", session.getUpdatedAt().toString());
+        return result;
+    }
+
     /** Retrieve all stored answers for a session. */
     public List<CustomerAnswerEntity> getAnswers(String sessionId) {
         return answerRepo.findBySessionId(sessionId);

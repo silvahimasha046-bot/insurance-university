@@ -3,6 +3,7 @@ package com.insuranceuniversity.backend.controller;
 import com.insuranceuniversity.backend.entity.CustomerAnswerEntity;
 import com.insuranceuniversity.backend.entity.CustomerSessionEntity;
 import com.insuranceuniversity.backend.service.CustomerSessionService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -33,6 +34,9 @@ public class CustomerController {
     @GetMapping("/sessions")
     public ResponseEntity<List<Map<String, Object>>> listSessions() {
         String userEmail = getAuthenticatedEmail();
+        if (userEmail == null || userEmail.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         List<Map<String, Object>> sessions = customerSessionService.listSessions(userEmail);
         return ResponseEntity.ok(sessions);
     }
@@ -61,6 +65,17 @@ public class CustomerController {
     public ResponseEntity<Void> deleteSession(@PathVariable String sessionId) {
         customerSessionService.deleteSession(sessionId);
         return ResponseEntity.noContent().build();
+    }
+
+    /** PATCH /api/customer/sessions/{sessionId}/complete — mark session as completed */
+    @PatchMapping("/sessions/{sessionId}/complete")
+    public ResponseEntity<Map<String, Object>> completeSession(@PathVariable String sessionId) {
+        try {
+            Map<String, Object> result = customerSessionService.completeSession(sessionId);
+            return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     /** POST /api/customer/sessions/{sessionId}/answers — upsert answers */

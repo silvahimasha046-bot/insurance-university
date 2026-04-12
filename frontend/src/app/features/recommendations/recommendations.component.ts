@@ -27,6 +27,7 @@ export class RecommendationsComponent implements OnInit {
   followUpError: string | null = null;
   expandedCards = new Set<string>();
   isLoggedIn = false;
+  isDashboardJourney = false;
 
   constructor(
     private wizard: WizardStateService,
@@ -38,6 +39,10 @@ export class RecommendationsComponent implements OnInit {
 
   ngOnInit(): void {
     this.isLoggedIn = this.auth.isLoggedIn();
+    this.isDashboardJourney = this.wizard.snapshot.recommendationsEntrySource === "dashboard";
+    if (!this.isDashboardJourney) {
+      this.wizard.setRecommendationsEntrySource("wizard");
+    }
     this.followUpAnswers = {
       ...(this.wizard.snapshot.recommendationContext?.followUpAnswers ?? {}),
     };
@@ -93,6 +98,14 @@ export class RecommendationsComponent implements OnInit {
         this.cd.detectChanges();
       },
     });
+  }
+
+  goBack(): void {
+    if (this.isDashboardJourney) {
+      this.router.navigateByUrl("/customer/dashboard");
+      return;
+    }
+    this.router.navigateByUrl("/wizard/step-3");
   }
 
   private applyRanking(): void {
@@ -221,6 +234,87 @@ export class RecommendationsComponent implements OnInit {
     return "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400";
   }
 
+  benefitTitle(b: Record<string, unknown>): string {
+    return String(
+      b['name'] ?? b['title'] ?? b['label'] ??
+      Object.values(b).find((v) => typeof v === 'string') ??
+      'Benefit'
+    );
+  }
+
+  benefitDescription(b: Record<string, unknown>): string {
+    return String(b['description'] ?? b['detail'] ?? b['text'] ?? '');
+  }
+
+  humanizeKey(key: string): string {
+    return key
+      .replace(/_/g, ' ')
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+
+  public readonly KNOWN_CALC_LABELS: Record<string, string> = {
+    age: 'Age (years)',
+    term: 'Policy Term (yrs)',
+    premiumTerm: 'Premium Paying Term (yrs)',
+    sumAssured: 'Sum Assured (LKR)',
+    coverageAmount: 'Coverage Amount (LKR)',
+    monthlyPremium: 'Monthly Premium (Rs.)',
+    annualPremium: 'Annual Premium (Rs.)',
+    deathBenefit: 'Death Benefit (LKR)',
+    maturityBenefit: 'Maturity Benefit (LKR)',
+    cashValue: 'Cash Value (LKR)',
+    income: 'Monthly Income (Rs.)',
+    notes: 'Notes',
+  };
+
+  calcEntries(calc: Record<string, unknown>): { label: string; value: string }[] {
+    const SKIP = ['scenario', 'title', 'label', 'description'];
+    return Object.entries(calc)
+      .filter(([k]) => !SKIP.includes(k))
+      .flatMap(([k, v]) => this.flattenCalcValue(k, v, 0));
+  }
+
+  private flattenCalcValue(key: string, v: unknown, depth: number): { label: string; value: string }[] {
+    const label = this.KNOWN_CALC_LABELS[key] ?? this.humanizeKey(key);
+    if (v === null || v === undefined) return [];
+    if (typeof v === 'number') return [{ label, value: v.toLocaleString('en-US') }];
+    if (typeof v === 'boolean') return [{ label, value: v ? 'Yes' : 'No' }];
+    if (typeof v === 'string') return v.trim() ? [{ label, value: v }] : [];
+    if (Array.isArray(v)) {
+      if (v.length === 0) return [];
+      if (v.every((item) => typeof item !== 'object' || item === null)) {
+        return [{ label, value: v.join(', ') }];
+      }
+      if (depth < 2) {
+        return v.flatMap((item, i) =>
+          typeof item === 'object' && item !== null
+            ? Object.entries(item as Record<string, unknown>).flatMap(([k2, v2]) =>
+                this.flattenCalcValue(k2, v2, depth + 1)
+              )
+            : [{ label: `${label} ${i + 1}`, value: String(item) }]
+        );
+      }
+    }
+    if (typeof v === 'object' && depth < 2) {
+      return Object.entries(v as Record<string, unknown>).flatMap(([k2, v2]) =>
+        this.flattenCalcValue(k2, v2, depth + 1)
+      );
+    }
+    return [{ label, value: JSON.stringify(v) }];
+  }
+
+  scenarioLabel(calc: Record<string, unknown>, idx: number): string {
+    return String(
+      calc['scenario'] ?? calc['title'] ?? calc['label'] ?? calc['description'] ?? `Scenario ${idx + 1}`
+    );
+  }
+
+  objectEntries(obj: Record<string, number> | undefined): { key: string; value: number }[] {
+    if (!obj) return [];
+    return Object.entries(obj).map(([key, value]) => ({ key, value }));
+  }
+
   selectPlanAndGoCompare(product: RankedProduct) {
     if (product.eligibilityDecision === "No Offer") return;
     this.wizard.setSelectedPlan({
@@ -234,6 +328,12 @@ export class RecommendationsComponent implements OnInit {
       riderExclusions: product.riderExclusions,
       reasons: product.reasons,
     });
+    this.wizard.setCompareEntrySource("recommendations");
+    this.router.navigateByUrl("/recommendations/compare");
+  }
+
+  goToCompare(): void {
+    this.wizard.setCompareEntrySource("recommendations");
     this.router.navigateByUrl("/recommendations/compare");
   }
 }

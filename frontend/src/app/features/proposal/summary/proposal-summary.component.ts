@@ -1,7 +1,8 @@
 import { Component, OnInit } from "@angular/core";
-import { RouterModule } from "@angular/router";
+import { Router, RouterModule } from "@angular/router";
 import { CommonModule } from "@angular/common";
 import { WizardStateService } from "../../../core/state/wizard-state.service";
+import { CustomerApiService } from "../../../core/customer-api.service";
 
 @Component({
   selector: "app-proposal-summary",
@@ -18,9 +19,11 @@ export class ProposalSummaryComponent implements OnInit {
   proposalRef = '';
   today = new Date();
 
-  constructor(private wizard: WizardStateService) {
-    
-  }
+  constructor(
+    private wizard: WizardStateService,
+    private customerApi: CustomerApiService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.selectedPlan = this.wizard.snapshot.selectedPlan;
@@ -43,6 +46,18 @@ export class ProposalSummaryComponent implements OnInit {
           ? (value ? "Yes" : "No")
           : String(value),
     }));
+  }
+
+  endSession(): void {
+    const sessionId = this.customerApi.getStoredSessionId();
+    if (sessionId) {
+      this.customerApi.completeSession(sessionId).subscribe({
+        next: () => this.router.navigate(['/survey']),
+        error: () => this.router.navigate(['/survey'])
+      });
+    } else {
+      this.router.navigate(['/survey']);
+    }
   }
 
   printProposal(): void {

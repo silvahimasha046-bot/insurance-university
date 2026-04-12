@@ -19,6 +19,7 @@ export class ProposalUploadComponent {
   nicUploading = false;
   medicalUploading = false;
   incomeUploading = false;
+  isDashboardJourney = false;
 
   constructor(
     private wizard: WizardStateService,
@@ -27,6 +28,7 @@ export class ProposalUploadComponent {
     private router: Router,
     private cd: ChangeDetectorRef,
   ) {
+    this.isDashboardJourney = this.wizard.snapshot.uploadEntrySource === 'dashboard';
     const docs = wizard.snapshot.documents;
     if (docs) {
       this.nicUploaded = docs.nicUploaded ?? false;
@@ -67,6 +69,14 @@ export class ProposalUploadComponent {
     } else {
       markDone();
     }
+  }
+
+  goBack(): void {
+    if (this.isDashboardJourney) {
+      this.router.navigateByUrl('/customer/dashboard');
+      return;
+    }
+    this.router.navigateByUrl('/recommendations/compare');
   }
 
   submit(): void {

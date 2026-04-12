@@ -81,6 +81,11 @@ export interface WizardState {
     followUpAskedCount?: number;
   };
 
+  recommendationsEntrySource?: "dashboard" | "wizard";
+  simulatorEntrySource?: "dashboard" | "wizard";
+  compareEntrySource?: "dashboard" | "recommendations";
+  uploadEntrySource?: "dashboard";
+
   documents?: {
     nicUploaded?: boolean;
     medicalUploaded?: boolean;
@@ -143,6 +148,22 @@ export class WizardStateService {
         ...(patch ?? {}),
       },
     });
+  }
+
+  setRecommendationsEntrySource(source?: "dashboard" | "wizard") {
+    this.setPartial({ recommendationsEntrySource: source });
+  }
+
+  setSimulatorEntrySource(source?: "dashboard" | "wizard") {
+    this.setPartial({ simulatorEntrySource: source });
+  }
+
+  setCompareEntrySource(source?: "dashboard" | "recommendations") {
+    this.setPartial({ compareEntrySource: source });
+  }
+
+  setUploadEntrySource(source?: "dashboard") {
+    this.setPartial({ uploadEntrySource: source });
   }
 
   setDocuments(patch: WizardState["documents"]) {
