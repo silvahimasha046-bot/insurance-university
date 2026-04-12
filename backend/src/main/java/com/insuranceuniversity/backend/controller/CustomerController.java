@@ -3,11 +3,16 @@ package com.insuranceuniversity.backend.controller;
 import com.insuranceuniversity.backend.entity.CustomerAnswerEntity;
 import com.insuranceuniversity.backend.entity.CustomerSessionEntity;
 import com.insuranceuniversity.backend.service.CustomerSessionService;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -92,6 +97,78 @@ public class CustomerController {
     public ResponseEntity<Map<String, Object>> getRecommendations(@PathVariable String sessionId) {
         Map<String, Object> result = customerSessionService.getRecommendations(sessionId);
         return ResponseEntity.ok(result);
+    }
+
+    /** POST /api/customer/sessions/{sessionId}/documents — upload or re-upload a document */
+    @PostMapping("/sessions/{sessionId}/documents")
+    public ResponseEntity<Map<String, Object>> uploadDocument(
+            @PathVariable String sessionId,
+            @RequestParam("docType") String docType,
+            @RequestParam(value = "docSide", required = false) String docSide,
+            @RequestParam("file") MultipartFile file) {
+        try {
+            String userEmail = getAuthenticatedEmail();
+            Map<String, Object> result = customerSessionService.uploadDocument(sessionId, docType, docSide, file, userEmail);
+            return ResponseEntity.ok(result);
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    /** GET /api/customer/sessions/{sessionId}/documents — latest session documents */
+    @GetMapping("/sessions/{sessionId}/documents")
+    public ResponseEntity<Map<String, Object>> getSessionDocuments(@PathVariable String sessionId) {
+        try {
+            String userEmail = getAuthenticatedEmail();
+            Map<String, Object> result = customerSessionService.getSessionDocuments(sessionId, userEmail);
+            return ResponseEntity.ok(result);
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    /** GET /api/customer/documents/latest — latest reusable customer documents */
+    @GetMapping("/documents/latest")
+    public ResponseEntity<Map<String, Object>> getLatestUserDocuments() {
+        String userEmail = getAuthenticatedEmail();
+        if (userEmail == null || userEmail.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        try {
+            Map<String, Object> result = customerSessionService.getLatestUserDocuments(userEmail);
+            return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    /** GET /api/customer/sessions/{sessionId}/documents/{documentId}/download — download a document */
+    @GetMapping("/sessions/{sessionId}/documents/{documentId}/download")
+    public ResponseEntity<Resource> downloadDocument(
+            @PathVariable String sessionId,
+            @PathVariable Long documentId) {
+        try {
+            String userEmail = getAuthenticatedEmail();
+            Map<String, Object> payload = customerSessionService.getDocumentDownload(sessionId, documentId, userEmail);
+            Resource resource = (Resource) payload.get("resource");
+            String filename = String.valueOf(payload.get("filename"));
+            String contentType = payload.get("contentType") instanceof String s && !s.isBlank()
+                    ? s
+                    : MediaType.APPLICATION_OCTET_STREAM_VALUE;
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                    .body(resource);
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     /** POST /api/customer/feedback — submit survey feedback */

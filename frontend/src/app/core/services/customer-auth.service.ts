@@ -7,6 +7,8 @@ const API_BASE = 'http://localhost:8080/api';
 const TOKEN_KEY = 'insurance_auth_token';
 const USER_NAME_KEY = 'insurance_user_name';
 const USER_EMAIL_KEY = 'insurance_user_email';
+const SESSION_KEY = 'insurance_customer_session_id';
+const ACTIVE_SESSION_META_KEY = 'insurance_customer_session_meta';
 
 export interface CustomerProfile {
   name: string;
@@ -44,6 +46,8 @@ export class CustomerAuthService {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_NAME_KEY);
     localStorage.removeItem(USER_EMAIL_KEY);
+    localStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(ACTIVE_SESSION_META_KEY);
     this.router.navigate(['/login']);
   }
 

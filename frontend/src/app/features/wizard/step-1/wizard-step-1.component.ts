@@ -52,6 +52,14 @@ export class WizardStep1Component implements OnInit {
     }
 
     if (!this.customerApi.getStoredSessionId()) {
+      this.customerApi.clearSessionData();
+      this.wizard.clear();
+      this.needsText = "";
+      this.isPep = false;
+      this.hasCriminalHistory = false;
+      this.educationLevel = "Undergrad";
+      this.occupation = "";
+      this.occupationHazardLevel = 1;
       this.customerApi.createSession().subscribe({
         next: (res) => {
           this.customerApi.storeSessionId(res.sessionId);
@@ -95,7 +103,7 @@ export class WizardStep1Component implements OnInit {
           this.cd.detectChanges();
         },
       });
-      localStorage.removeItem("insurance_customer_session_id");
+      this.customerApi.clearSessionData();
     }
     this.wizard.clear();
     this.router.navigateByUrl("/");

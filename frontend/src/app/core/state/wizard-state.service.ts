@@ -87,6 +87,8 @@ export interface WizardState {
   uploadEntrySource?: "dashboard";
 
   documents?: {
+    nicFrontUploaded?: boolean;
+    nicBackUploaded?: boolean;
     nicUploaded?: boolean;
     medicalUploaded?: boolean;
     incomeUploaded?: boolean;

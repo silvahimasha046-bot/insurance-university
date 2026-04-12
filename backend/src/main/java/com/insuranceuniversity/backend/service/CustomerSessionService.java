@@ -4,31 +4,44 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.insuranceuniversity.backend.entity.CustomerAnswerEntity;
+import com.insuranceuniversity.backend.entity.CustomerDocumentEntity;
 import com.insuranceuniversity.backend.entity.CustomerSessionEntity;
 import com.insuranceuniversity.backend.entity.EligibilityRuleEntity;
 import com.insuranceuniversity.backend.entity.ProductEntity;
 import com.insuranceuniversity.backend.entity.RecommendationRunEntity;
 import com.insuranceuniversity.backend.entity.SessionLogEntity;
 import com.insuranceuniversity.backend.repository.CustomerAnswerRepository;
+import com.insuranceuniversity.backend.repository.CustomerDocumentRepository;
 import com.insuranceuniversity.backend.repository.CustomerSessionRepository;
 import com.insuranceuniversity.backend.repository.EligibilityRuleRepository;
 import com.insuranceuniversity.backend.repository.RecommendationRunRepository;
 import com.insuranceuniversity.backend.repository.SessionLogRepository;
-import lombok.extern.log4j.Log4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -39,6 +52,7 @@ public class CustomerSessionService {
 
     private final CustomerSessionRepository sessionRepo;
     private final CustomerAnswerRepository answerRepo;
+    private final CustomerDocumentRepository documentRepo;
     private final RecommendationRunRepository runRepo;
     private final SessionLogRepository sessionLogRepo;
     private final ProductService productService;
@@ -49,9 +63,13 @@ public class CustomerSessionService {
     @Value("${app.premium.taxRate:0.0}")
     private double premiumTaxRate;
 
+    @Value("${app.uploadsDir}")
+    private String uploadsDir;
+
     public CustomerSessionService(
             CustomerSessionRepository sessionRepo,
             CustomerAnswerRepository answerRepo,
+            CustomerDocumentRepository documentRepo,
             RecommendationRunRepository runRepo,
             SessionLogRepository sessionLogRepo,
             ProductService productService,
@@ -60,6 +78,7 @@ public class CustomerSessionService {
             ObjectMapper objectMapper) {
         this.sessionRepo = sessionRepo;
         this.answerRepo = answerRepo;
+        this.documentRepo = documentRepo;
         this.runRepo = runRepo;
         this.sessionLogRepo = sessionLogRepo;
         this.productService = productService;
@@ -136,6 +155,141 @@ public class CustomerSessionService {
     /** Retrieve all stored answers for a session. */
     public List<CustomerAnswerEntity> getAnswers(String sessionId) {
         return answerRepo.findBySessionId(sessionId);
+    }
+
+    /** Upload a customer document and keep full history while moving latest pointers. */
+    @Transactional
+    public Map<String, Object> uploadDocument(
+            String sessionId,
+            String docType,
+            String docSide,
+            MultipartFile file,
+            String requesterEmail) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Document file is required");
+        }
+
+        String normalizedType = normalizeDocType(docType);
+        String normalizedSide = normalizeDocSide(normalizedType, docSide);
+
+        CustomerSessionEntity session = getSession(sessionId);
+        assertSessionAccess(session, requesterEmail);
+
+        Path storedPath = storeCustomerDocumentFile(sessionId, normalizedType, normalizedSide, file);
+
+        int nextVersion = documentRepo.findBySessionIdAndDocTypeAndDocSideOrderByVersionNoDesc(
+                sessionId,
+                normalizedType,
+                normalizedSide
+        ).stream().map(CustomerDocumentEntity::getVersionNo)
+                .filter(Objects::nonNull)
+                .max(Comparator.naturalOrder())
+                .orElse(0) + 1;
+
+        documentRepo.findFirstBySessionIdAndDocTypeAndDocSideAndLatestForSessionTrueOrderByUploadedAtDesc(
+                sessionId,
+                normalizedType,
+                normalizedSide
+        ).ifPresent(existing -> {
+            existing.setLatestForSession(false);
+            documentRepo.save(existing);
+        });
+
+        String userEmail = session.getUserEmail();
+        if (userEmail != null && !userEmail.isBlank()) {
+            documentRepo.findFirstByUserEmailAndDocTypeAndDocSideAndLatestForUserTrueOrderByUploadedAtDesc(
+                    userEmail,
+                    normalizedType,
+                    normalizedSide
+            ).ifPresent(existing -> {
+                existing.setLatestForUser(false);
+                documentRepo.save(existing);
+            });
+        }
+
+        CustomerDocumentEntity doc = new CustomerDocumentEntity();
+        doc.setSessionId(sessionId);
+        doc.setUserEmail((userEmail == null || userEmail.isBlank()) ? null : userEmail);
+        doc.setDocType(normalizedType);
+        doc.setDocSide(normalizedSide);
+        doc.setOriginalFilename(file.getOriginalFilename() == null ? "document" : file.getOriginalFilename());
+        doc.setStoredFilename(storedPath.getFileName().toString());
+        doc.setStoredPath(storedPath.toAbsolutePath().toString());
+        doc.setContentType(file.getContentType());
+        doc.setFileSize(file.getSize());
+        doc.setVersionNo(nextVersion);
+        doc.setLatestForSession(true);
+        doc.setLatestForUser(userEmail != null && !userEmail.isBlank());
+        doc.setUploadedAt(LocalDateTime.now());
+
+        CustomerDocumentEntity saved = documentRepo.save(doc);
+        writeSessionLog(sessionId, "DOCUMENT_UPLOADED", normalizedType + (normalizedSide == null ? "" : (":" + normalizedSide)));
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("document", toDocumentMap(saved, sessionId));
+        return response;
+    }
+
+    /** Return latest documents linked to a specific session. */
+    public Map<String, Object> getSessionDocuments(String sessionId, String requesterEmail) {
+        CustomerSessionEntity session = getSession(sessionId);
+        assertSessionAccess(session, requesterEmail);
+
+        List<Map<String, Object>> documents = documentRepo
+                .findBySessionIdAndLatestForSessionTrueOrderByUploadedAtDesc(sessionId)
+                .stream()
+                .map(doc -> toDocumentMap(doc, sessionId))
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("sessionId", sessionId);
+        response.put("documents", documents);
+        return response;
+    }
+
+    /** Return latest user-level reusable documents for the authenticated customer. */
+    public Map<String, Object> getLatestUserDocuments(String requesterEmail) {
+        if (requesterEmail == null || requesterEmail.isBlank()) {
+            throw new IllegalArgumentException("Authentication is required");
+        }
+
+        List<Map<String, Object>> documents = documentRepo
+                .findByUserEmailAndLatestForUserTrueOrderByUploadedAtDesc(requesterEmail)
+                .stream()
+                .map(doc -> toDocumentMap(doc, doc.getSessionId()))
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("documents", documents);
+        return response;
+    }
+
+    /** Load a document file from storage after ownership verification. */
+    public Map<String, Object> getDocumentDownload(String sessionId, Long documentId, String requesterEmail) {
+        CustomerSessionEntity session = getSession(sessionId);
+        assertSessionAccess(session, requesterEmail);
+
+        CustomerDocumentEntity doc = documentRepo.findById(documentId)
+                .orElseThrow(() -> new IllegalArgumentException("Document not found: " + documentId));
+        if (!sessionId.equals(doc.getSessionId())) {
+            throw new IllegalArgumentException("Document not found for session");
+        }
+
+        try {
+            Path filePath = Paths.get(doc.getStoredPath()).toAbsolutePath().normalize();
+            Resource resource = new UrlResource(filePath.toUri());
+            if (!resource.exists() || !resource.isReadable()) {
+                throw new IllegalArgumentException("Document file missing");
+            }
+
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("resource", resource);
+            payload.put("filename", doc.getOriginalFilename());
+            payload.put("contentType", doc.getContentType());
+            return payload;
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException("Invalid document path", e);
+        }
     }
 
     /** Upsert a batch of answers (key→value pairs) for a session. */
@@ -350,6 +504,74 @@ public class CustomerSessionService {
         } catch (JsonProcessingException e) {
             log.warn("Invalid JSON in product metadata field {}: {}", key, e.getMessage());
         }
+    }
+
+    private String normalizeDocType(String docType) {
+        if (docType == null) {
+            throw new IllegalArgumentException("docType is required");
+        }
+        String normalized = docType.trim().toLowerCase();
+        if (!List.of("nic", "medical", "income").contains(normalized)) {
+            throw new IllegalArgumentException("Unsupported docType: " + docType);
+        }
+        return normalized;
+    }
+
+    private String normalizeDocSide(String docType, String docSide) {
+        if (!"nic".equals(docType)) {
+            return null;
+        }
+        if (docSide == null || docSide.isBlank()) {
+            throw new IllegalArgumentException("docSide is required for NIC");
+        }
+        String normalized = docSide.trim().toLowerCase();
+        if (!List.of("front", "back").contains(normalized)) {
+            throw new IllegalArgumentException("Unsupported docSide: " + docSide);
+        }
+        return normalized;
+    }
+
+    private void assertSessionAccess(CustomerSessionEntity session, String requesterEmail) {
+        String owner = session.getUserEmail();
+        if (owner == null || owner.isBlank()) {
+            return;
+        }
+        if (requesterEmail == null || requesterEmail.isBlank() || !owner.equalsIgnoreCase(requesterEmail)) {
+            throw new AccessDeniedException("Session access denied");
+        }
+    }
+
+    private Path storeCustomerDocumentFile(String sessionId, String docType, String docSide, MultipartFile file) {
+        try {
+            Path root = Paths.get(uploadsDir).toAbsolutePath().normalize();
+            Path docRoot = root.resolve("customer-documents").resolve(sessionId).resolve(docType);
+            if (docSide != null) {
+                docRoot = docRoot.resolve(docSide);
+            }
+            Files.createDirectories(docRoot);
+
+            String original = file.getOriginalFilename() == null ? "document" : file.getOriginalFilename();
+            String storedName = UUID.randomUUID() + "_" + original;
+            Path destination = docRoot.resolve(storedName).normalize();
+            file.transferTo(destination.toFile());
+            return destination;
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Failed to store document", e);
+        }
+    }
+
+    private Map<String, Object> toDocumentMap(CustomerDocumentEntity doc, String sessionId) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("documentId", doc.getId());
+        map.put("sessionId", sessionId);
+        map.put("docType", doc.getDocType());
+        map.put("docSide", doc.getDocSide());
+        map.put("uploaded", true);
+        map.put("originalFilename", doc.getOriginalFilename());
+        map.put("uploadedAt", doc.getUploadedAt() == null ? null : doc.getUploadedAt().toString());
+        map.put("versionNo", doc.getVersionNo());
+        map.put("downloadUrl", "/api/customer/sessions/" + sessionId + "/documents/" + doc.getId() + "/download");
+        return map;
     }
 
     private void writeSessionLog(String sessionId, String eventType, String detail) {

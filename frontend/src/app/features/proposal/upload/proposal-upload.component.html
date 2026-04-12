@@ -6,28 +6,68 @@
     <h2 class="text-lg font-bold flex-1 text-center pr-12">Step 3 of 4</h2>
   </div>
 
-  <div class="px-4 py-4 max-w-xl mx-auto">
+  <div class="px-4 py-4 pb-36 max-w-xl mx-auto">
     <h1 class="text-2xl font-bold">Document Upload</h1>
     <p class="text-[#92adc9] text-sm mt-1">Provide documents to finalize your application.</p>
+    <p class="text-[#92adc9] text-xs mt-2">NIC front and back are mandatory. You can re-upload and download anytime.</p>
+
+    <div *ngIf="errorMessage" class="mt-4 rounded-lg border border-red-400/50 bg-red-500/10 p-3 text-sm text-red-200">
+      {{ errorMessage }}
+    </div>
 
     <div class="mt-6 space-y-4">
-      <!-- NIC Upload -->
+      <!-- NIC Front Upload -->
       <div class="rounded-xl border-2 p-6 text-center transition-colors"
-           [class.border-green-500]="nicUploaded"
-           [class.border-dashed]="!nicUploaded"
-           [class.border-[#324d67]]="!nicUploaded"
-           [class.bg-[#192633]/30]="!nicUploaded">
+           [class.border-green-500]="nicFrontUploaded"
+           [class.border-dashed]="!nicFrontUploaded"
+           [class.border-[#324d67]]="!nicFrontUploaded"
+           [class.bg-[#192633]/30]="!nicFrontUploaded">
         <span class="material-symbols-outlined text-3xl mb-1"
-              [class.text-green-400]="nicUploaded"
-              [class.text-[#92adc9]]="!nicUploaded">badge</span>
-        <p class="font-bold">NIC Front &amp; Back</p>
+              [class.text-green-400]="nicFrontUploaded"
+              [class.text-[#92adc9]]="!nicFrontUploaded">badge</span>
+        <p class="font-bold">NIC Front</p>
         <p class="text-[#92adc9] text-xs mt-1">JPEG, PNG or PDF (Max 5MB)</p>
-        <p *ngIf="nicUploaded" class="text-green-400 text-xs mt-2 font-medium">✓ Uploaded</p>
-        <p *ngIf="nicUploading" class="text-[#92adc9] text-xs mt-2">Uploading…</p>
+        <p *ngIf="nicFrontUploaded" class="text-green-400 text-xs mt-2 font-medium">✓ Uploaded</p>
+        <p *ngIf="nicFrontMeta" class="text-[#92adc9] text-xs mt-1">{{ nicFrontMeta.originalFilename }}</p>
+        <p *ngIf="nicFrontMeta" class="text-[#92adc9] text-xs">{{ getUploadDate(nicFrontMeta) }}</p>
+        <p *ngIf="nicFrontUploading" class="text-[#92adc9] text-xs mt-2">Uploading…</p>
         <input #nicInput type="file" class="hidden" accept=".jpg,.jpeg,.png,.pdf"
-               (change)="onFileSelected('nic', $event)" />
-        <button *ngIf="!nicUploaded && !nicUploading" (click)="nicInput.click()"
-                class="mt-4 h-10 px-4 rounded-lg bg-[#233648] font-bold hover:bg-[#2d4560]">Browse Files</button>
+               (change)="onFileSelected('nic', $event, 'front')" />
+        <div class="mt-4 flex items-center justify-center gap-2">
+          <button *ngIf="!nicFrontUploading" (click)="nicInput.click()"
+                  class="h-10 px-4 rounded-lg bg-[#233648] font-bold hover:bg-[#2d4560]">
+            {{ nicFrontUploaded ? 'Re-upload' : 'Browse Files' }}
+          </button>
+          <button *ngIf="nicFrontUploaded" (click)="downloadDocument('nic', 'front')"
+                  class="h-10 px-4 rounded-lg bg-[#1f5f4d] font-bold hover:bg-[#277962]">Download</button>
+        </div>
+      </div>
+
+      <!-- NIC Back Upload -->
+      <div class="rounded-xl border-2 p-6 text-center transition-colors"
+           [class.border-green-500]="nicBackUploaded"
+           [class.border-dashed]="!nicBackUploaded"
+           [class.border-[#324d67]]="!nicBackUploaded"
+           [class.bg-[#192633]/30]="!nicBackUploaded">
+        <span class="material-symbols-outlined text-3xl mb-1"
+              [class.text-green-400]="nicBackUploaded"
+              [class.text-[#92adc9]]="!nicBackUploaded">badge</span>
+        <p class="font-bold">NIC Back</p>
+        <p class="text-[#92adc9] text-xs mt-1">JPEG, PNG or PDF (Max 5MB)</p>
+        <p *ngIf="nicBackUploaded" class="text-green-400 text-xs mt-2 font-medium">✓ Uploaded</p>
+        <p *ngIf="nicBackMeta" class="text-[#92adc9] text-xs mt-1">{{ nicBackMeta.originalFilename }}</p>
+        <p *ngIf="nicBackMeta" class="text-[#92adc9] text-xs">{{ getUploadDate(nicBackMeta) }}</p>
+        <p *ngIf="nicBackUploading" class="text-[#92adc9] text-xs mt-2">Uploading…</p>
+        <input #nicBackInput type="file" class="hidden" accept=".jpg,.jpeg,.png,.pdf"
+               (change)="onFileSelected('nic', $event, 'back')" />
+        <div class="mt-4 flex items-center justify-center gap-2">
+          <button *ngIf="!nicBackUploading" (click)="nicBackInput.click()"
+                  class="h-10 px-4 rounded-lg bg-[#233648] font-bold hover:bg-[#2d4560]">
+            {{ nicBackUploaded ? 'Re-upload' : 'Browse Files' }}
+          </button>
+          <button *ngIf="nicBackUploaded" (click)="downloadDocument('nic', 'back')"
+                  class="h-10 px-4 rounded-lg bg-[#1f5f4d] font-bold hover:bg-[#277962]">Download</button>
+        </div>
       </div>
 
       <!-- Medical Report Upload -->
@@ -42,11 +82,19 @@
         <p class="font-bold">Medical Report</p>
         <p class="text-[#92adc9] text-xs mt-1">Within last 3 months</p>
         <p *ngIf="medicalUploaded" class="text-green-400 text-xs mt-2 font-medium">✓ Uploaded</p>
+        <p *ngIf="medicalMeta" class="text-[#92adc9] text-xs mt-1">{{ medicalMeta.originalFilename }}</p>
+        <p *ngIf="medicalMeta" class="text-[#92adc9] text-xs">{{ getUploadDate(medicalMeta) }}</p>
         <p *ngIf="medicalUploading" class="text-[#92adc9] text-xs mt-2">Uploading…</p>
         <input #medInput type="file" class="hidden" accept=".jpg,.jpeg,.png,.pdf"
                (change)="onFileSelected('medical', $event)" />
-        <button *ngIf="!medicalUploaded && !medicalUploading" (click)="medInput.click()"
-                class="mt-4 h-10 px-4 rounded-lg bg-[#233648] font-bold hover:bg-[#2d4560]">Browse Files</button>
+        <div class="mt-4 flex items-center justify-center gap-2">
+          <button *ngIf="!medicalUploading" (click)="medInput.click()"
+            class="h-10 px-4 rounded-lg bg-[#233648] font-bold hover:bg-[#2d4560]">
+            {{ medicalUploaded ? 'Re-upload' : 'Browse Files' }}
+          </button>
+          <button *ngIf="medicalUploaded" (click)="downloadDocument('medical')"
+            class="h-10 px-4 rounded-lg bg-[#1f5f4d] font-bold hover:bg-[#277962]">Download</button>
+        </div>
       </div>
 
       <!-- Proof of Income Upload -->
@@ -61,17 +109,25 @@
         <p class="font-bold">Proof of Income</p>
         <p class="text-[#92adc9] text-xs mt-1">Salary slip or bank statement</p>
         <p *ngIf="incomeUploaded" class="text-green-400 text-xs mt-2 font-medium">✓ Uploaded</p>
+        <p *ngIf="incomeMeta" class="text-[#92adc9] text-xs mt-1">{{ incomeMeta.originalFilename }}</p>
+        <p *ngIf="incomeMeta" class="text-[#92adc9] text-xs">{{ getUploadDate(incomeMeta) }}</p>
         <p *ngIf="incomeUploading" class="text-[#92adc9] text-xs mt-2">Uploading…</p>
         <input #incomeInput type="file" class="hidden" accept=".jpg,.jpeg,.png,.pdf"
                (change)="onFileSelected('income', $event)" />
-        <button *ngIf="!incomeUploaded && !incomeUploading" (click)="incomeInput.click()"
-                class="mt-4 h-10 px-4 rounded-lg bg-[#233648] font-bold hover:bg-[#2d4560]">Browse Files</button>
+        <div class="mt-4 flex items-center justify-center gap-2">
+          <button *ngIf="!incomeUploading" (click)="incomeInput.click()"
+                  class="h-10 px-4 rounded-lg bg-[#233648] font-bold hover:bg-[#2d4560]">
+            {{ incomeUploaded ? 'Re-upload' : 'Browse Files' }}
+          </button>
+          <button *ngIf="incomeUploaded" (click)="downloadDocument('income')"
+                  class="h-10 px-4 rounded-lg bg-[#1f5f4d] font-bold hover:bg-[#277962]">Download</button>
+        </div>
       </div>
     </div>
   </div>
 
   <div class="fixed bottom-0 left-0 right-0 p-4 bg-background-dark/95 border-t border-[#324d67]/30 flex gap-3">
     <button *ngIf="!isDashboardJourney" class="flex-1 h-12 rounded-xl bg-[#233648] font-bold" routerLink="/recommendations/compare">Previous</button>
-    <button (click)="submit()" class="flex-[2] h-12 rounded-xl bg-primary font-bold">Submit &amp; Finalize</button>
+    <button (click)="submit()" [disabled]="!canSubmit()" class="flex-[2] h-12 rounded-xl bg-primary font-bold disabled:opacity-50 disabled:cursor-not-allowed">Submit &amp; Finalize</button>
   </div>
 </div>

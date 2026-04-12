@@ -83,9 +83,39 @@ export interface RecommendationResponse {
   followUpQuestions?: FollowUpQuestion[];
 }
 
+export type DocumentType = "nic" | "medical" | "income";
+export type DocumentSide = "front" | "back";
+
+export interface UploadedDocumentMeta {
+  documentId: number;
+  sessionId: string;
+  docType: DocumentType;
+  docSide?: DocumentSide;
+  uploaded: boolean;
+  originalFilename: string;
+  uploadedAt?: string;
+  versionNo?: number;
+  downloadUrl?: string;
+}
+
+export interface SessionDocumentsResponse {
+  sessionId: string;
+  documents: UploadedDocumentMeta[];
+}
+
+export interface LatestUserDocumentsResponse {
+  documents: UploadedDocumentMeta[];
+}
+
 @Injectable({ providedIn: "root" })
 export class CustomerApiService {
   constructor(private http: HttpClient) {}
+
+  /** Clear stored session id and active session metadata. */
+  clearSessionData(): void {
+    localStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(ACTIVE_SESSION_META_KEY);
+  }
 
   /** Create a new customer session and persist sessionId to localStorage. */
   createSession(): Observable<{ sessionId: string }> {
@@ -149,5 +179,41 @@ export class CustomerApiService {
   /** List past sessions for the authenticated user. */
   listSessions(): Observable<CustomerSession[]> {
     return this.http.get<CustomerSession[]>(`${BASE_URL}/customer/sessions`);
+  }
+
+  /** Upload or re-upload a session document. */
+  uploadSessionDocument(
+    sessionId: string,
+    docType: DocumentType,
+    file: File,
+    docSide?: DocumentSide
+  ): Observable<{ document: UploadedDocumentMeta }> {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("docType", docType);
+    if (docSide) {
+      formData.append("docSide", docSide);
+    }
+    return this.http.post<{ document: UploadedDocumentMeta }>(
+      `${BASE_URL}/customer/sessions/${sessionId}/documents`,
+      formData
+    );
+  }
+
+  /** Fetch latest documents saved for a specific session. */
+  getSessionDocuments(sessionId: string): Observable<SessionDocumentsResponse> {
+    return this.http.get<SessionDocumentsResponse>(`${BASE_URL}/customer/sessions/${sessionId}/documents`);
+  }
+
+  /** Fetch latest reusable documents for authenticated user. */
+  getLatestUserDocuments(): Observable<LatestUserDocumentsResponse> {
+    return this.http.get<LatestUserDocumentsResponse>(`${BASE_URL}/customer/documents/latest`);
+  }
+
+  /** Download one uploaded session document as blob. */
+  downloadSessionDocument(sessionId: string, documentId: number): Observable<Blob> {
+    return this.http.get(`${BASE_URL}/customer/sessions/${sessionId}/documents/${documentId}/download`, {
+      responseType: "blob",
+    });
   }
 }

@@ -85,6 +85,8 @@ export class CustomerDashboardComponent implements OnInit {
   }
 
   startAssessment(): void {
+    this.customerApi.clearSessionData();
+    this.wizard.clear();
     this.wizard.setRecommendationsEntrySource(undefined);
     this.wizard.setSimulatorEntrySource(undefined);
     this.wizard.setCompareEntrySource(undefined);
@@ -104,8 +106,21 @@ export class CustomerDashboardComponent implements OnInit {
   }
 
   openUploadProposal(): void {
+    this.customerApi.clearSessionData();
+    this.wizard.clear();
     this.wizard.setUploadEntrySource('dashboard');
-    this.router.navigateByUrl('/proposal/upload');
+    this.customerApi.createSession().pipe(take(1)).subscribe({
+      next: (res) => {
+        const createdAt = new Date().toISOString();
+        this.customerApi.storeSessionId(res.sessionId);
+        this.customerApi.storeActiveSessionMeta({ sessionId: res.sessionId, createdAt });
+        this.router.navigateByUrl('/proposal/upload');
+      },
+      error: () => {
+        this.sessionsError = true;
+        this.cd.detectChanges();
+      },
+    });
   }
 
   openSessionPicker(target: SessionTarget): void {

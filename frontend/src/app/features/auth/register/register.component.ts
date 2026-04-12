@@ -4,6 +4,8 @@ import { FormsModule } from "@angular/forms";
 import { CommonModule } from "@angular/common";
 import { HttpClient } from "@angular/common/http";
 import { CustomerAuthService } from "../../../core/services/customer-auth.service";
+import { CustomerApiService } from "../../../core/customer-api.service";
+import { WizardStateService } from "../../../core/state/wizard-state.service";
 
 @Component({
   selector: "app-register",
@@ -22,6 +24,8 @@ export class RegisterComponent {
     private http: HttpClient,
     private router: Router,
     private customerAuth: CustomerAuthService,
+    private customerApi: CustomerApiService,
+    private wizard: WizardStateService,
     private cd: ChangeDetectorRef,
   ) {}
 
@@ -36,6 +40,8 @@ export class RegisterComponent {
       })
       .subscribe({
         next: (res) => {
+          this.customerApi.clearSessionData();
+          this.wizard.clear();
           this.customerAuth.storeSession(res.token, res.name, res.email);
           this.loading = false;
           this.cd.detectChanges();
