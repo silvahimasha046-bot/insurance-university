@@ -258,6 +258,8 @@ public class CustomerSessionService {
         doc.setUploadedAt(LocalDateTime.now());
 
         CustomerDocumentEntity saved = documentRepo.save(doc);
+        session.setUpdatedAt(LocalDateTime.now());
+        sessionRepo.save(session);
         writeSessionLog(sessionId, "DOCUMENT_UPLOADED", normalizedType + (normalizedSide == null ? "" : (":" + normalizedSide)));
 
         Map<String, Object> response = new HashMap<>();
@@ -331,7 +333,7 @@ public class CustomerSessionService {
     @Transactional
     public void saveAnswers(String sessionId, Map<String, Object> answers) {
         // Ensure session exists
-        getSession(sessionId);
+        CustomerSessionEntity session = getSession(sessionId);
 
         for (Map.Entry<String, Object> entry : answers.entrySet()) {
             // Remove existing answer with same key before inserting
@@ -349,13 +351,16 @@ public class CustomerSessionService {
             answerRepo.save(ans);
         }
 
+        session.setUpdatedAt(LocalDateTime.now());
+        sessionRepo.save(session);
+
         writeSessionLog(sessionId, "ANSWERS_SUBMITTED", answers.keySet().toString());
     }
 
     /** Build features from stored answers, call AI engine, persist run, return response. */
     @Transactional
     public Map<String, Object> getRecommendations(String sessionId) {
-        getSession(sessionId);
+        CustomerSessionEntity session = getSession(sessionId);
 
         // Build feature map from stored answers
         Map<String, Object> features = buildFeatures(sessionId);
@@ -398,6 +403,9 @@ public class CustomerSessionService {
         run.setResponseJson(responseJson);
         run.setCreatedAt(LocalDateTime.now());
         runRepo.save(run);
+
+        session.setUpdatedAt(LocalDateTime.now());
+        sessionRepo.save(session);
 
         writeSessionLog(sessionId, "RECOMMENDATIONS_FETCHED", null);
         return aiResponse;

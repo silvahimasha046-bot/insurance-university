@@ -84,6 +84,10 @@ export class WizardStep1Component implements OnInit {
   }
 
   declineConsent(): void {
+    if (this.isLoggedIn) {
+      this.router.navigateByUrl("/customer/dashboard");
+      return;
+    }
     this.router.navigateByUrl("/");
   }
 
