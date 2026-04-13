@@ -163,6 +163,20 @@ export class CustomerApiService {
     );
   }
 
+  /** Fetch stored answers for a session (for form pre-population). */
+  getSessionAnswers(sessionId: string): Observable<Record<string, unknown>> {
+    return this.http.get<Record<string, unknown>>(
+      `${BASE_URL}/customer/sessions/${sessionId}/answers`
+    );
+  }
+
+  /** Fetch the latest recommendation run for a session. */
+  getLatestRecommendation(sessionId: string): Observable<{ runId: number; createdAt: string; data: RecommendationResponse }> {
+    return this.http.get<{ runId: number; createdAt: string; data: RecommendationResponse }>(
+      `${BASE_URL}/customer/sessions/${sessionId}/recommendations/latest`
+    );
+  }
+
   /** Delete a session (consent withdrawal). */
   deleteSession(sessionId: string): Observable<void> {
     return this.http.delete<void>(`${BASE_URL}/customer/sessions/${sessionId}`);

@@ -51,6 +51,11 @@ export class WizardStep1Component implements OnInit {
       this.showConsentModal = true;
     }
 
+    // Skip auto-session creation in continuation mode
+    if (this.wizard.snapshot.isContinuingSession) {
+      return;
+    }
+
     if (!this.customerApi.getStoredSessionId()) {
       this.customerApi.clearSessionData();
       this.wizard.clear();

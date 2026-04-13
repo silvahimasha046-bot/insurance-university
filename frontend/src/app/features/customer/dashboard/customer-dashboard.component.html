@@ -107,7 +107,7 @@
             <span class="material-symbols-outlined text-orange-600 dark:text-orange-400 text-2xl">upload_file</span>
           </div>
           <h2 class="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-primary transition-colors">
-            Upload Proposal
+            Upload Documents
           </h2>
         </div>
         <p class="text-sm text-gray-500 dark:text-gray-400">
@@ -115,7 +115,7 @@
         </p>
       </button>
 
-      <!-- Compare Plans -->
+      <!-- Selected Plan -->
       <button type="button" (click)="openSessionPicker('compare')"
         [disabled]="!hasCompletedSessions"
         class="group block rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6 shadow-sm hover:shadow-md hover:border-primary dark:hover:border-primary transition-all no-underline disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:border-gray-200 dark:disabled:hover:border-gray-700 disabled:hover:shadow-sm">
@@ -124,14 +124,14 @@
             <span class="material-symbols-outlined text-cyan-600 dark:text-cyan-400 text-2xl">compare</span>
           </div>
           <h2 class="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-primary transition-colors">
-            Compare Plans
+            Selected Plan
           </h2>
         </div>
         <p class="text-sm text-gray-500 dark:text-gray-400">
-          Compare multiple insurance plans side by side to make an informed decision.
+          Review your selected insurance plan details and proceed with confidence.
         </p>
         <p *ngIf="!hasCompletedSessions" class="text-xs text-amber-600 dark:text-amber-400 mt-2">
-          Complete an assessment first to enable plan comparison.
+          Complete an assessment first to enable selected plan comparison.
         </p>
       </button>
 

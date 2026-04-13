@@ -34,6 +34,7 @@ export class ProposalUploadComponent {
 
   errorMessage = '';
   isDashboardJourney = false;
+  isContinuingSession = false;
   private sessionId: string | null = null;
   private sessionValidated = false;
 
@@ -45,6 +46,7 @@ export class ProposalUploadComponent {
     private cd: ChangeDetectorRef,
   ) {
     this.isDashboardJourney = this.wizard.snapshot.uploadEntrySource === 'dashboard';
+    this.isContinuingSession = this.wizard.snapshot.isContinuingSession ?? false;
     const docs = this.wizard.snapshot.documents;
     if (docs) {
       this.nicFrontUploaded = docs.nicFrontUploaded ?? docs.nicUploaded ?? false;
@@ -71,10 +73,9 @@ export class ProposalUploadComponent {
 
     this.ensureSessionId((sessionId) => {
       this.customerApi.uploadSessionDocument(sessionId, docType, file, docSide).subscribe({
-        next: (response) => {
-          this.applyDocument(response.document, true);
+        next: () => {
           this.setUploadingState(docType, docSide, false);
-          this.updateWizardDocumentsState();
+          this.refreshDocuments(sessionId);
           this.cd.detectChanges();
           input.value = '';
         },
@@ -146,30 +147,10 @@ export class ProposalUploadComponent {
   }
 
   private loadPersistedDocuments(): void {
-    this.sessionId = this.customerApi.getStoredSessionId();
-    if (!this.sessionId) {
-      if (this.auth.isLoggedIn() && this.isDashboardJourney) {
-        this.createFreshSession(() => {
-          this.loadPersistedDocuments();
-        });
-      }
-      return;
-    }
-
-    if (this.auth.isLoggedIn()) {
-      this.customerApi.getLatestUserDocuments().subscribe({
-        next: (latest) => {
-          this.applyDocuments(latest.documents, false);
-          this.loadSessionDocuments(this.sessionId as string);
-        },
-        error: () => {
-          this.loadSessionDocuments(this.sessionId as string);
-        },
-      });
-      return;
-    }
-
-    this.loadSessionDocuments(this.sessionId);
+    this.resolveExistingSession((sessionId) => {
+      this.sessionId = sessionId;
+      this.refreshDocuments(sessionId);
+    });
   }
 
   private loadSessionDocuments(sessionId: string): void {
@@ -182,15 +163,26 @@ export class ProposalUploadComponent {
       },
       error: () => {
         this.sessionValidated = false;
-        if (this.auth.isLoggedIn()) {
-          this.createFreshSession(() => {
-            this.loadPersistedDocuments();
-          });
-          return;
-        }
         this.cd.detectChanges();
       },
     });
+  }
+
+  private refreshDocuments(sessionId: string): void {
+    if (this.auth.isLoggedIn()) {
+      this.customerApi.getLatestUserDocuments().subscribe({
+        next: (latest) => {
+          this.applyDocuments(latest.documents, false);
+          this.loadSessionDocuments(sessionId);
+        },
+        error: () => {
+          this.loadSessionDocuments(sessionId);
+        },
+      });
+      return;
+    }
+
+    this.loadSessionDocuments(sessionId);
   }
 
   private applyDocuments(docs: UploadedDocumentMeta[], overrideExisting: boolean): void {
@@ -241,6 +233,50 @@ export class ProposalUploadComponent {
           onReady(this.sessionId as string);
         },
         error: () => {
+          this.resolveExistingSession((sessionId) => {
+            this.sessionId = sessionId;
+            onReady(sessionId);
+          });
+        },
+      });
+      return;
+    }
+
+    this.resolveExistingSession((sessionId) => {
+      this.sessionId = sessionId;
+      onReady(sessionId);
+    });
+  }
+
+  private resolveExistingSession(onReady: (sessionId: string) => void): void {
+    const storedSessionId = this.customerApi.getStoredSessionId();
+    if (storedSessionId) {
+      this.sessionValidated = false;
+      onReady(storedSessionId);
+      return;
+    }
+
+    if (this.auth.isLoggedIn()) {
+      this.customerApi.listSessions().subscribe({
+        next: (sessions) => {
+          const reusableSession = this.pickLatestReusableSession(sessions);
+          if (reusableSession) {
+            this.customerApi.storeSessionId(reusableSession.sessionId);
+            this.customerApi.storeActiveSessionMeta({
+              sessionId: reusableSession.sessionId,
+              createdAt: reusableSession.createdAt,
+            });
+            this.wizard.setPartial({
+              continuationSessionId: reusableSession.sessionId,
+              isContinuingSession: true,
+            });
+            this.sessionValidated = false;
+            onReady(reusableSession.sessionId);
+            return;
+          }
+          this.createFreshSession(onReady);
+        },
+        error: () => {
           this.createFreshSession(onReady);
         },
       });
@@ -248,6 +284,12 @@ export class ProposalUploadComponent {
     }
 
     this.createFreshSession(onReady);
+  }
+
+  private pickLatestReusableSession(
+    sessions: Array<{ sessionId: string; status: string; createdAt: string }>
+  ): { sessionId: string; status: string; createdAt: string } | undefined {
+    return sessions.find((session) => session.status === 'ACTIVE') ?? sessions[0];
   }
 
   private createFreshSession(onReady?: (sessionId: string) => void): void {
@@ -259,6 +301,10 @@ export class ProposalUploadComponent {
         this.customerApi.storeActiveSessionMeta({
           sessionId: response.sessionId,
           createdAt: new Date().toISOString(),
+        });
+        this.wizard.setPartial({
+          continuationSessionId: response.sessionId,
+          isContinuingSession: true,
         });
         onReady?.(response.sessionId);
       },

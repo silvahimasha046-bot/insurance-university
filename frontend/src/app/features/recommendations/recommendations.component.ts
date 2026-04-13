@@ -29,6 +29,13 @@ export class RecommendationsComponent implements OnInit {
   isLoggedIn = false;
   isDashboardJourney = false;
 
+  // New: Continuation/dual-path support
+  isContinuingSession = false;
+  cachedRecommendationAvailable = false;
+  showCachedRecommendation = false;
+  cachedRecommendationCreatedAt = '';
+  recommendationLoadMode: 'cached' | 'fresh' = 'cached';
+
   constructor(
     private wizard: WizardStateService,
     private router: Router,
@@ -40,6 +47,8 @@ export class RecommendationsComponent implements OnInit {
   ngOnInit(): void {
     this.isLoggedIn = this.auth.isLoggedIn();
     this.isDashboardJourney = this.wizard.snapshot.recommendationsEntrySource === "dashboard";
+    this.isContinuingSession = this.wizard.snapshot.isContinuingSession ?? false;
+
     if (!this.isDashboardJourney) {
       this.wizard.setRecommendationsEntrySource("wizard");
     }
@@ -48,13 +57,44 @@ export class RecommendationsComponent implements OnInit {
     };
     const sessionId = this.customerApi.getStoredSessionId();
     if (sessionId) {
-      this.loadRecommendations(sessionId);
+      // If continuing session, try to load cached recommendation first
+      if (this.isContinuingSession) {
+        this.tryLoadCachedRecommendation(sessionId);
+      } else {
+        this.loadRecommendations(sessionId);
+      }
       return;
     }
 
     if (this.isLoggedIn) {
       this.router.navigateByUrl("/customer/dashboard");
     }
+  }
+
+  /** Try to load the latest cached recommendation from the session. */
+  private tryLoadCachedRecommendation(sessionId: string): void {
+    this.loading = true;
+    this.customerApi.getLatestRecommendation(sessionId).subscribe({
+      next: (res) => {
+        this.allProducts = res.data.rankedProducts;
+        this.followUpQuestions = res.data.followUpQuestions ?? [];
+        this.cachedRecommendationAvailable = true;
+        this.cachedRecommendationCreatedAt = res.createdAt;
+        this.showCachedRecommendation = true;
+        this.recommendationLoadMode = 'cached';
+        this.primeFollowUpAnswers();
+        this.applyRanking();
+        this.persistRecommendationContext();
+        this.loading = false;
+        this.cd.detectChanges();
+      },
+      error: (err) => {
+        // No cached recommendation; load fresh instead
+        console.warn("No cached recommendation found, generating fresh recommendations", err);
+        this.cachedRecommendationAvailable = false;
+        this.loadRecommendations(sessionId);
+      },
+    });
   }
 
   private loadRecommendations(sessionId: string): void {
@@ -67,6 +107,7 @@ export class RecommendationsComponent implements OnInit {
         this.primeFollowUpAnswers();
         this.applyRanking();
         this.persistRecommendationContext();
+        this.recommendationLoadMode = 'fresh';
         this.loading = false;
         this.cd.detectChanges();
       },
@@ -98,6 +139,15 @@ export class RecommendationsComponent implements OnInit {
         this.cd.detectChanges();
       },
     });
+  }
+
+  /** Regenerate fresh recommendations (only for continuation sessions) */
+  regenerateRecommendations(): void {
+    const sessionId = this.customerApi.getStoredSessionId();
+    if (sessionId) {
+      this.showCachedRecommendation = false;
+      this.loadRecommendations(sessionId);
+    }
   }
 
   goBack(): void {

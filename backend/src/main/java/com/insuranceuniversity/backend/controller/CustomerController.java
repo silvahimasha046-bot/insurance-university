@@ -99,6 +99,31 @@ public class CustomerController {
         return ResponseEntity.ok(result);
     }
 
+    /** GET /api/customer/sessions/{sessionId}/answers — retrieve answers as a flat map for form pre-population */
+    @GetMapping("/sessions/{sessionId}/answers")
+    public ResponseEntity<Map<String, Object>> getSessionAnswers(@PathVariable String sessionId) {
+        try {
+            Map<String, Object> answers = customerSessionService.getAnswersAsMap(sessionId);
+            return ResponseEntity.ok(answers);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    /** GET /api/customer/sessions/{sessionId}/recommendations/latest — retrieve the latest recommendation run */
+    @GetMapping("/sessions/{sessionId}/recommendations/latest")
+    public ResponseEntity<Map<String, Object>> getLatestRecommendation(@PathVariable String sessionId) {
+        try {
+            Map<String, Object> result = customerSessionService.getLatestRecommendationRun(sessionId);
+            if (result == null) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
     /** POST /api/customer/sessions/{sessionId}/documents — upload or re-upload a document */
     @PostMapping("/sessions/{sessionId}/documents")
     public ResponseEntity<Map<String, Object>> uploadDocument(

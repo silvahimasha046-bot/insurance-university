@@ -157,6 +157,41 @@ public class CustomerSessionService {
         return answerRepo.findBySessionId(sessionId);
     }
 
+    /** Retrieve answers as a flat map (key → value) for frontend consumption. */
+    public Map<String, Object> getAnswersAsMap(String sessionId) {
+        List<CustomerAnswerEntity> answers = answerRepo.findBySessionId(sessionId);
+        Map<String, Object> answerMap = new HashMap<>();
+        for (CustomerAnswerEntity ans : answers) {
+            try {
+                Object value = objectMapper.readValue(ans.getValueJson(), Object.class);
+                answerMap.put(ans.getKey(), value);
+            } catch (JsonProcessingException e) {
+                answerMap.put(ans.getKey(), ans.getValueJson());
+            }
+        }
+        return answerMap;
+    }
+
+    /** Retrieve the latest recommendation run for a session (if exists). */
+    public Map<String, Object> getLatestRecommendationRun(String sessionId) {
+        List<RecommendationRunEntity> runs = runRepo.findBySessionIdOrderByCreatedAtDesc(sessionId);
+        if (runs.isEmpty()) {
+            return null;
+        }
+        RecommendationRunEntity latestRun = runs.get(0);
+        try {
+            Map<String, Object> recommendationData = objectMapper.readValue(latestRun.getResponseJson(), Map.class);
+            Map<String, Object> response = new HashMap<>();
+            response.put("runId", latestRun.getId());
+            response.put("createdAt", latestRun.getCreatedAt().toString());
+            response.put("data", recommendationData);
+            return response;
+        } catch (JsonProcessingException e) {
+            log.warn("Failed to parse recommendation response JSON: {}", e.getMessage());
+            return null;
+        }
+    }
+
     /** Upload a customer document and keep full history while moving latest pointers. */
     @Transactional
     public Map<String, Object> uploadDocument(

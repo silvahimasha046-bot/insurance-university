@@ -106,21 +106,26 @@ export class CustomerDashboardComponent implements OnInit {
   }
 
   openUploadProposal(): void {
-    this.customerApi.clearSessionData();
-    this.wizard.clear();
+    const preferredSession = this.getPreferredUploadSession();
+
+    this.wizard.setRecommendationsEntrySource(undefined);
+    this.wizard.setSimulatorEntrySource(undefined);
+    this.wizard.setCompareEntrySource(undefined);
     this.wizard.setUploadEntrySource('dashboard');
-    this.customerApi.createSession().pipe(take(1)).subscribe({
-      next: (res) => {
-        const createdAt = new Date().toISOString();
-        this.customerApi.storeSessionId(res.sessionId);
-        this.customerApi.storeActiveSessionMeta({ sessionId: res.sessionId, createdAt });
-        this.router.navigateByUrl('/proposal/upload');
-      },
-      error: () => {
-        this.sessionsError = true;
-        this.cd.detectChanges();
-      },
+    this.wizard.setPartial({
+      continuationSessionId: preferredSession?.sessionId,
+      isContinuingSession: !!preferredSession,
     });
+
+    if (preferredSession) {
+      this.customerApi.storeSessionId(preferredSession.sessionId);
+      this.customerApi.storeActiveSessionMeta({
+        sessionId: preferredSession.sessionId,
+        createdAt: preferredSession.createdAt,
+      });
+    }
+
+    this.router.navigateByUrl('/proposal/upload');
   }
 
   openSessionPicker(target: SessionTarget): void {
@@ -213,7 +218,52 @@ export class CustomerDashboardComponent implements OnInit {
     this.wizard.setSimulatorEntrySource(undefined);
     this.wizard.setCompareEntrySource(undefined);
     this.wizard.setUploadEntrySource(undefined);
-    this.router.navigateByUrl('/wizard/step-1');
+
+    // Load session answers for pre-population
+    this.wizard.loadSessionForContinuation(session.sessionId)
+      .then(() => {
+        this.router.navigateByUrl('/wizard/step-1');
+      })
+      .catch((error) => {
+        console.error('Failed to load session:', error);
+        this.sessionsError = true;
+        this.cd.detectChanges();
+      });
+  }
+
+  private getPreferredUploadSession(): { sessionId: string; createdAt: string } | undefined {
+    const storedSessionId = this.customerApi.getStoredSessionId();
+    const activeMeta = this.customerApi.getActiveSessionMeta();
+
+    if (storedSessionId) {
+      const storedSession = this.sessions.find((session) => session.sessionId === storedSessionId);
+      if (storedSession) {
+        return { sessionId: storedSession.sessionId, createdAt: storedSession.createdAt };
+      }
+      if (activeMeta?.sessionId === storedSessionId) {
+        return activeMeta;
+      }
+    }
+
+    if (activeMeta?.sessionId) {
+      const activeMetaSession = this.sessions.find((session) => session.sessionId === activeMeta.sessionId);
+      if (activeMetaSession) {
+        return { sessionId: activeMetaSession.sessionId, createdAt: activeMetaSession.createdAt };
+      }
+      return activeMeta;
+    }
+
+    const activeSession = this.sessions.find((session) => session.status === 'ACTIVE');
+    if (activeSession) {
+      return { sessionId: activeSession.sessionId, createdAt: activeSession.createdAt };
+    }
+
+    const newestSession = this.sessions[0];
+    if (newestSession) {
+      return { sessionId: newestSession.sessionId, createdAt: newestSession.createdAt };
+    }
+
+    return undefined;
   }
 
   formatDate(iso: string): string {
