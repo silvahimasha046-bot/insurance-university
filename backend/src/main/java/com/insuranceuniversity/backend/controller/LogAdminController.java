@@ -1,5 +1,7 @@
 package com.insuranceuniversity.backend.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.insuranceuniversity.backend.entity.SessionLogEntity;
 import com.insuranceuniversity.backend.repository.SessionLogRepository;
 import org.springframework.data.domain.Page;
@@ -10,8 +12,11 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -19,9 +24,11 @@ import java.util.stream.Collectors;
 public class LogAdminController {
 
     private final SessionLogRepository repo;
+    private final ObjectMapper objectMapper;
 
-    public LogAdminController(SessionLogRepository repo) {
+    public LogAdminController(SessionLogRepository repo, ObjectMapper objectMapper) {
         this.repo = repo;
+        this.objectMapper = objectMapper;
     }
 
     @GetMapping
@@ -48,14 +55,17 @@ public class LogAdminController {
         List<SessionLogEntity> logs = repo.searchAll(from, to, eventType, sessionHash, userSegment);
 
         if ("json".equalsIgnoreCase(format)) {
-            StringBuilder sb = new StringBuilder();
-            for (SessionLogEntity log : logs) {
-                sb.append(toJsonLine(log)).append("\n");
+            List<Map<String, Object>> rows = logs.stream()
+                    .map(this::toJsonRecord)
+                    .collect(Collectors.toList());
+            try {
+                return ResponseEntity.ok()
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"logs.json\"")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(objectMapper.writeValueAsBytes(rows));
+            } catch (JsonProcessingException e) {
+                throw new IllegalStateException("Failed to serialize logs JSON export.", e);
             }
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"logs.jsonl\"")
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .body(sb.toString().getBytes());
         }
 
         StringBuilder csv = new StringBuilder();
@@ -70,8 +80,8 @@ public class LogAdminController {
         }
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"logs.csv\"")
-                .contentType(MediaType.TEXT_PLAIN)
-                .body(csv.toString().getBytes());
+            .contentType(MediaType.parseMediaType("text/csv"))
+            .body(csv.toString().getBytes(StandardCharsets.UTF_8));
     }
 
     private String escape(String value) {
@@ -82,16 +92,14 @@ public class LogAdminController {
         return value;
     }
 
-    private String toJsonLine(SessionLogEntity log) {
-        return "{\"id\":" + log.getId() +
-               ",\"sessionHash\":\"" + nullSafe(log.getSessionHash()) + "\"" +
-               ",\"timestamp\":\"" + (log.getTimestamp() != null ? log.getTimestamp().toString() : "") + "\"" +
-               ",\"eventType\":\"" + nullSafe(log.getEventType()) + "\"" +
-               ",\"userSegment\":\"" + nullSafe(log.getUserSegment()) + "\"" +
-               ",\"payloadJson\":" + (log.getPayloadJson() != null ? log.getPayloadJson() : "null") + "}";
-    }
-
-    private String nullSafe(String s) {
-        return s != null ? s : "";
+    private Map<String, Object> toJsonRecord(SessionLogEntity log) {
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("id", log.getId());
+        row.put("sessionHash", log.getSessionHash());
+        row.put("timestamp", log.getTimestamp());
+        row.put("eventType", log.getEventType());
+        row.put("userSegment", log.getUserSegment());
+        row.put("payloadJson", log.getPayloadJson());
+        return row;
     }
 }

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 const API = 'http://localhost:8080/api/admin';
@@ -124,10 +124,14 @@ export class AdminApiService {
     Object.entries(filters).forEach(([k, v]) => { if (v !== null && v !== undefined && v !== '') params = params.set(k, String(v)); });
     return this.http.get(`${API}/logs`, { params });
   }
-  exportLogs(filters: any, format: string): string {
+  exportLogsFile(filters: any, format: 'csv' | 'json'): Observable<HttpResponse<Blob>> {
     let params = new HttpParams().set('format', format);
     Object.entries(filters).forEach(([k, v]) => { if (v !== null && v !== undefined && v !== '') params = params.set(k, String(v)); });
-    return `${API}/logs/export?${params.toString()}`;
+    return this.http.get(`${API}/logs/export`, {
+      params,
+      observe: 'response',
+      responseType: 'blob',
+    });
   }
 
   // Insights

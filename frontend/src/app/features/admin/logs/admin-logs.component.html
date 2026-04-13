@@ -35,19 +35,23 @@
              class="w-full bg-gray-700 text-white rounded px-2 py-1.5 text-sm" />
     </div>
     <div class="flex items-end gap-2">
-      <button (click)="search()"
+      <button (click)="applyFilters()"
               class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm px-3 py-1.5 rounded transition-colors">
         Search
       </button>
-      <button (click)="exportCsv()"
-              class="flex-1 bg-gray-600 hover:bg-gray-500 text-white text-sm px-3 py-1.5 rounded transition-colors">
-        CSV
+      <button (click)="exportCsv()" [disabled]="exportingFormat !== null"
+              class="flex-1 bg-gray-600 hover:bg-gray-500 disabled:opacity-50 text-white text-sm px-3 py-1.5 rounded transition-colors">
+        {{ exportingFormat === 'csv' ? 'Downloading…' : 'CSV' }}
       </button>
-      <button (click)="exportJson()"
-              class="flex-1 bg-gray-600 hover:bg-gray-500 text-white text-sm px-3 py-1.5 rounded transition-colors">
-        JSON
+      <button (click)="exportJson()" [disabled]="exportingFormat !== null"
+              class="flex-1 bg-gray-600 hover:bg-gray-500 disabled:opacity-50 text-white text-sm px-3 py-1.5 rounded transition-colors">
+        {{ exportingFormat === 'json' ? 'Downloading…' : 'JSON' }}
       </button>
     </div>
+  </div>
+
+  <div *ngIf="errorMsg" class="mb-3 rounded border border-red-700 bg-red-900/40 px-3 py-2 text-sm text-red-200">
+    {{ errorMsg }}
   </div>
 
   <div class="text-xs text-gray-500 mb-2">{{ totalElements }} total results</div>
@@ -75,4 +79,30 @@
       </tr>
     </tbody>
   </table>
+
+  <div class="mt-4 flex flex-col gap-3 text-sm text-gray-300 md:flex-row md:items-center md:justify-between">
+    <div class="text-xs text-gray-500">
+      Showing {{ startItem }}-{{ endItem }} of {{ totalElements }}
+    </div>
+
+    <div class="flex items-center gap-2">
+      <label class="text-xs text-gray-400">Rows</label>
+      <select [(ngModel)]="size" (ngModelChange)="onPageSizeChange()"
+              class="bg-gray-700 text-white rounded px-2 py-1 text-xs">
+        <option *ngFor="let option of pageSizeOptions" [ngValue]="option">{{ option }}</option>
+      </select>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <button (click)="goToPreviousPage()" [disabled]="page === 0"
+              class="rounded bg-gray-700 px-3 py-1.5 text-xs text-white hover:bg-gray-600 disabled:opacity-50">
+        Previous
+      </button>
+      <span class="text-xs text-gray-400">Page {{ page + 1 }} of {{ totalPages }}</span>
+      <button (click)="goToNextPage()" [disabled]="page + 1 >= totalPages"
+              class="rounded bg-gray-700 px-3 py-1.5 text-xs text-white hover:bg-gray-600 disabled:opacity-50">
+        Next
+      </button>
+    </div>
+  </div>
 </div>
