@@ -319,9 +319,10 @@ export class RecommendationsComponent implements OnInit {
   };
 
   calcEntries(calc: Record<string, unknown>): { label: string; value: string }[] {
-    const SKIP = ['scenario', 'title', 'label', 'description'];
+    const SKIP = ['scenario', 'title', 'label', 'description', 'rows'];
     return Object.entries(calc)
       .filter(([k]) => !SKIP.includes(k))
+      .filter(([k, v]) => !(Array.isArray(v) && k === 'rows'))
       .flatMap(([k, v]) => this.flattenCalcValue(k, v, 0));
   }
 
@@ -358,6 +359,42 @@ export class RecommendationsComponent implements OnInit {
     return String(
       calc['scenario'] ?? calc['title'] ?? calc['label'] ?? calc['description'] ?? `Scenario ${idx + 1}`
     );
+  }
+
+  hasRowsTable(calc: Record<string, unknown>): boolean {
+    if (!calc['rows']) return false;
+    const rows = calc['rows'];
+    return Array.isArray(rows) && rows.length > 0 && typeof rows[0] === 'object' && rows[0] !== null;
+  }
+
+  getTableColumns(rows: unknown[]): string[] {
+    if (!Array.isArray(rows) || rows.length === 0) return [];
+    const firstRow = rows[0];
+    if (typeof firstRow !== 'object' || firstRow === null) return [];
+    return Object.keys(firstRow as Record<string, unknown>);
+  }
+
+  getTableData(rows: unknown[]): Record<string, unknown>[] {
+    if (!Array.isArray(rows)) return [];
+    return rows.filter((row) => typeof row === 'object' && row !== null) as Record<string, unknown>[];
+  }
+
+  formatTableValue(value: unknown): string {
+    if (value === null || value === undefined) return '—';
+    if (typeof value === 'number') return value.toLocaleString('en-US');
+    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+    if (typeof value === 'string') return value.trim() || '—';
+    return String(value);
+  }
+
+  getTableColumnsForCalc(calc: Record<string, unknown>): string[] {
+    const rows = calc['rows'];
+    return this.getTableColumns(rows as unknown[]);
+  }
+
+  getTableDataForCalc(calc: Record<string, unknown>): Record<string, unknown>[] {
+    const rows = calc['rows'];
+    return this.getTableData(rows as unknown[]);
   }
 
   objectEntries(obj: Record<string, number> | undefined): { key: string; value: number }[] {

@@ -235,11 +235,37 @@
               <div *ngFor="let calc of product.productMetadata?.sampleCalculations; let si = index"
                    class="bg-white dark:bg-slate-800/50 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
                 <p class="text-xs font-semibold text-teal-600 dark:text-teal-400 mb-2">{{ scenarioLabel(calc, si) }}</p>
-                <div class="grid grid-cols-2 gap-x-3 gap-y-1">
+                
+                <!-- Show non-rows metadata above table if it exists -->
+                <div *ngIf="calcEntries(calc).length > 0" class="grid grid-cols-2 gap-x-3 gap-y-1 mb-3">
                   <ng-container *ngFor="let entry of calcEntries(calc)">
                     <p class="text-[11px] text-slate-500 dark:text-slate-400">{{ entry.label }}</p>
                     <p class="text-[11px] font-semibold text-slate-800 dark:text-slate-100 text-right">{{ entry.value }}</p>
                   </ng-container>
+                </div>
+
+                <!-- Render rows as table if present -->
+                <div *ngIf="hasRowsTable(calc)" class="overflow-x-auto">
+                  <table class="w-full text-xs border-collapse">
+                    <thead>
+                      <tr class="bg-slate-100 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-600">
+                        <th *ngFor="let col of getTableColumnsForCalc(calc)"
+                            class="px-2 py-1.5 text-left font-semibold text-slate-700 dark:text-slate-300 text-[11px]">
+                          {{ (KNOWN_CALC_LABELS[col] ?? humanizeKey(col)) }}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let row of getTableDataForCalc(calc), let last = last"
+                          class="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/30"
+                          [ngClass]="{'border-b-0': last}">
+                        <td *ngFor="let col of getTableColumnsForCalc(calc)"
+                            class="px-2 py-1.5 text-slate-700 dark:text-slate-300 text-[11px] tabular-nums">
+                          {{ formatTableValue(row[col]) }}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
