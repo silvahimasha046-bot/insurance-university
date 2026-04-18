@@ -90,7 +90,6 @@ export class WizardStep1Component implements OnInit, OnDestroy {
       this.showConsentModal = true;
     }
 
-    // Skip auto-session creation in continuation mode
     if (this.wizard.snapshot.isContinuingSession) {
       return;
     }
@@ -107,6 +106,10 @@ export class WizardStep1Component implements OnInit, OnDestroy {
       this.customerApi.createSession().subscribe({
         next: (res) => {
           this.customerApi.storeSessionId(res.sessionId);
+          this.customerApi.storeActiveSessionMeta({
+            sessionId: res.sessionId,
+            createdAt: new Date().toISOString(),
+          });
           this.cd.detectChanges();
         },
         error: (err) => {
@@ -256,7 +259,6 @@ export class WizardStep1Component implements OnInit, OnDestroy {
       this.isRecording = true;
       this.cd.detectChanges();
     } catch {
-      // SpeechRecognition throws if start is called while active.
       this.isRecording = true;
     }
   }

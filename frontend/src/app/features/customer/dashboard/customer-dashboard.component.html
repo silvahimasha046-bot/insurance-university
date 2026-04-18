@@ -59,6 +59,22 @@
         </p>
       </button>
 
+      <!-- Agent Chat Journey -->
+      <button type="button" (click)="startChatJourney()"
+         class="group block rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6 shadow-sm hover:shadow-md hover:border-primary dark:hover:border-primary transition-all no-underline">
+        <div class="flex items-center gap-4 mb-3">
+          <div class="w-12 h-12 rounded-lg bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center">
+            <span class="material-symbols-outlined text-indigo-600 dark:text-indigo-400 text-2xl">forum</span>
+          </div>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-primary transition-colors">
+            Agent Chat Journey
+          </h2>
+        </div>
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          Start an open conversation and get all suitable policies with suitability scores in one flow.
+        </p>
+      </button>
+
       <!-- View Recommendations -->
       <button type="button" (click)="openSessionPicker('recommendations')"
         [disabled]="!hasCompletedSessions"

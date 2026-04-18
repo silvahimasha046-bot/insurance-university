@@ -105,6 +105,28 @@ export class CustomerDashboardComponent implements OnInit {
     });
   }
 
+  startChatJourney(): void {
+    this.customerApi.clearSessionData();
+    this.wizard.clear();
+    this.wizard.setRecommendationsEntrySource(undefined);
+    this.wizard.setSimulatorEntrySource(undefined);
+    this.wizard.setCompareEntrySource(undefined);
+    this.wizard.setUploadEntrySource(undefined);
+
+    this.customerApi.createSession().pipe(take(1)).subscribe({
+      next: (res) => {
+        const createdAt = new Date().toISOString();
+        this.customerApi.storeSessionId(res.sessionId);
+        this.customerApi.storeActiveSessionMeta({ sessionId: res.sessionId, createdAt });
+        this.router.navigateByUrl('/chat');
+      },
+      error: () => {
+        this.sessionsError = true;
+        this.cd.detectChanges();
+      },
+    });
+  }
+
   openUploadProposal(): void {
     const preferredSession = this.getPreferredUploadSession();
 

@@ -1,0 +1,99 @@
+<div class="bg-background-light dark:bg-background-dark min-h-screen flex justify-center">
+  <div class="w-full max-w-[430px] min-h-screen border-x border-gray-200 dark:border-gray-800">
+    <header class="flex items-center p-4 justify-between sticky top-0 bg-background-light dark:bg-background-dark z-10">
+      <div class="flex size-12 items-center cursor-pointer" (click)="back()">
+        <span class="material-symbols-outlined text-gray-900 dark:text-white">arrow_back</span>
+      </div>
+      <h2 class="text-gray-900 dark:text-white text-lg font-bold flex-1 text-center">Agent Chat Journey</h2>
+      <div class="w-12"></div>
+    </header>
+
+    <main class="px-4 pb-20">
+      <h1 class="text-gray-900 dark:text-white text-[24px] font-bold text-center pb-1 pt-4">
+        Open Insurance Conversation
+      </h1>
+      <p class="text-gray-600 dark:text-[#92adc9] text-center mb-4 text-sm">
+        Share your profile and needs. I will ask normal policy questions and list all suitable policies.
+      </p>
+      <p *ngIf="isLoggedIn && activeSessionStartedAt" class="text-center text-xs text-gray-500 dark:text-[#92adc9] mb-4">
+        Session started: {{ activeSessionStartedAt | date:'medium' }}
+      </p>
+
+      <section class="rounded-2xl border border-slate-200 dark:border-[#324d67] bg-white dark:bg-[#192633] p-4 mb-6">
+        <div class="h-72 overflow-y-auto rounded-xl border border-slate-200 dark:border-[#324d67] bg-slate-50 dark:bg-[#101922] p-3 space-y-2">
+          <div *ngFor="let item of chatMessages" class="flex" [class.justify-end]="item.role === 'USER'">
+            <div
+              class="max-w-[85%] rounded-xl px-3 py-2 text-sm"
+              [ngClass]="item.role === 'USER'
+                ? 'bg-primary text-white'
+                : 'bg-white dark:bg-[#1a2b3b] text-slate-800 dark:text-[#dce9f6]'"
+            >
+              {{ item.message }}
+            </div>
+          </div>
+          <p *ngIf="chatLoading" class="text-xs text-slate-500 dark:text-[#92adc9]">Agent is thinking...</p>
+        </div>
+
+        <div class="mt-3 flex gap-2">
+          <input
+            type="text"
+            class="flex-1 h-11 rounded-xl border border-slate-300 dark:border-[#324d67] bg-white dark:bg-[#101922] px-3 text-sm text-slate-900 dark:text-white"
+            placeholder="Type your answer..."
+            [(ngModel)]="chatInput"
+            (keyup.enter)="sendChat()"
+          />
+          <button
+            type="button"
+            class="h-11 px-4 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50"
+            [disabled]="chatLoading || !chatInput.trim()"
+            (click)="sendChat()"
+          >
+            Send
+          </button>
+        </div>
+
+        <div *ngIf="chatError" class="mt-2 flex items-center justify-between gap-2">
+          <p class="text-xs text-red-500">{{ chatError }}</p>
+          <button
+            type="button"
+            class="text-xs px-2 py-1 rounded-md border border-red-300 text-red-600 dark:border-red-400/40 dark:text-red-300"
+            [disabled]="chatLoading || !lastFailedMessage"
+            (click)="retryLastMessage()"
+          >
+            Retry
+          </button>
+        </div>
+
+        <p *ngIf="chatFallbackHint" class="text-xs text-amber-600 dark:text-amber-400 mt-2">
+          {{ chatFallbackHint }}
+        </p>
+
+        <p *ngIf="missingFields.length > 0" class="text-xs text-slate-500 dark:text-[#92adc9] mt-2">
+          Next question ({{ missingFields.length }} remaining): {{ missingFields[0].question }}
+        </p>
+      </section>
+
+      <section *ngIf="rankedPolicies.length > 0" class="rounded-2xl border border-slate-200 dark:border-[#324d67] bg-white dark:bg-[#192633] p-4">
+        <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-3">All Suitable Policies</h3>
+        <div class="space-y-2">
+          <div *ngFor="let policy of rankedPolicies" class="rounded-xl border border-slate-200 dark:border-[#324d67] bg-white dark:bg-[#101922] p-3">
+            <div class="flex items-center justify-between gap-3">
+              <p class="font-semibold text-slate-900 dark:text-white">{{ policy.name }}</p>
+              <span class="text-xs font-semibold px-2 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                Suitability {{ (policy.score || 0) * 100 | number:'1.0-0' }}%
+              </span>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-[#92adc9] mt-1">
+              {{ (policy.monthlyPremiumEstimate || 0) | number:'1.0-0' }} LKR / month
+            </p>
+            <ul *ngIf="policy.reasons.length" class="mt-2 space-y-1">
+              <li *ngFor="let reason of policy.reasons" class="text-xs text-slate-600 dark:text-[#b8cbe0]">
+                • {{ reason }}
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>

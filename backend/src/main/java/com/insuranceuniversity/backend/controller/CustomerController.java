@@ -2,6 +2,7 @@ package com.insuranceuniversity.backend.controller;
 
 import com.insuranceuniversity.backend.entity.CustomerAnswerEntity;
 import com.insuranceuniversity.backend.entity.CustomerSessionEntity;
+import com.insuranceuniversity.backend.service.CustomerChatService;
 import com.insuranceuniversity.backend.service.CustomerSessionService;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -22,9 +23,11 @@ import java.util.Map;
 public class CustomerController {
 
     private final CustomerSessionService customerSessionService;
+    private final CustomerChatService customerChatService;
 
-    public CustomerController(CustomerSessionService customerSessionService) {
+    public CustomerController(CustomerSessionService customerSessionService, CustomerChatService customerChatService) {
         this.customerSessionService = customerSessionService;
+        this.customerChatService = customerChatService;
     }
 
     /** POST /api/customer/sessions — create a new session */
@@ -90,6 +93,37 @@ public class CustomerController {
             @RequestBody Map<String, Object> answers) {
         customerSessionService.saveAnswers(sessionId, answers);
         return ResponseEntity.ok(Map.of("status", "ok"));
+    }
+
+    /** POST /api/customer/sessions/{sessionId}/chat — send one chat turn and receive agent reply */
+    @PostMapping("/sessions/{sessionId}/chat")
+    public ResponseEntity<Map<String, Object>> chatTurn(
+            @PathVariable String sessionId,
+            @RequestBody Map<String, Object> body) {
+        String message = body.get("message") instanceof String s ? s : "";
+        try {
+            String userEmail = getAuthenticatedEmail();
+            Map<String, Object> result = customerChatService.sendMessage(sessionId, message, userEmail);
+            return ResponseEntity.ok(result);
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    /** GET /api/customer/sessions/{sessionId}/chat/history — retrieve chat history for session */
+    @GetMapping("/sessions/{sessionId}/chat/history")
+    public ResponseEntity<Map<String, Object>> chatHistory(@PathVariable String sessionId) {
+        try {
+            String userEmail = getAuthenticatedEmail();
+            List<Map<String, Object>> history = customerChatService.getHistory(sessionId, userEmail);
+            return ResponseEntity.ok(Map.of("sessionId", sessionId, "messages", history));
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
     }
 
     /** POST /api/customer/sessions/{sessionId}/recommendations — get AI recommendations */

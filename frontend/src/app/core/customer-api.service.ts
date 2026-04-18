@@ -83,6 +83,29 @@ export interface RecommendationResponse {
   followUpQuestions?: FollowUpQuestion[];
 }
 
+export interface ChatHistoryMessage {
+  id: number;
+  role: "USER" | "AGENT";
+  message: string;
+  createdAt?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface MissingChatField {
+  key: string;
+  question: string;
+}
+
+export interface ChatTurnResponse {
+  sessionId: string;
+  reply: string;
+  extractedAnswers: Record<string, unknown>;
+  missingFields: MissingChatField[];
+  recommendation?: RecommendationResponse;
+  extractionMode?: string;
+  fallbackReason?: string | null;
+}
+
 export type DocumentType = "nic" | "medical" | "income";
 export type DocumentSide = "front" | "back";
 
@@ -152,6 +175,21 @@ export class CustomerApiService {
     return this.http.post<{ status: string }>(
       `${BASE_URL}/customer/sessions/${sessionId}/answers`,
       answers
+    );
+  }
+
+  /** Send one customer chat message and get an agent response with structured updates. */
+  sendChatMessage(sessionId: string, message: string): Observable<ChatTurnResponse> {
+    return this.http.post<ChatTurnResponse>(
+      `${BASE_URL}/customer/sessions/${sessionId}/chat`,
+      { message }
+    );
+  }
+
+  /** Load persisted chat history for a customer session. */
+  getChatHistory(sessionId: string): Observable<{ sessionId: string; messages: ChatHistoryMessage[] }> {
+    return this.http.get<{ sessionId: string; messages: ChatHistoryMessage[] }>(
+      `${BASE_URL}/customer/sessions/${sessionId}/chat/history`
     );
   }
 

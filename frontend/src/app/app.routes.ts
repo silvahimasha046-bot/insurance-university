@@ -35,6 +35,11 @@ export const routes: Routes = [
       ),
   },
   {
+    path: "chat",
+    loadComponent: () =>
+      import("./features/chat/chat.component").then((m) => m.ChatComponent),
+  },
+  {
     path: "wizard/step-2",
     canMatch: [wizardProgressGuard("step-2")],
     loadComponent: () =>

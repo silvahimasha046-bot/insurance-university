@@ -26,6 +26,13 @@ logging:
 app:
   uploadsDir: "./uploads"
   aiEngineUrl: "${AI_ENGINE_URL:http://localhost:8000}"
+  chat:
+    extractionMode: "${CHAT_EXTRACTION_MODE:deterministic}"
+  llm:
+    baseUrl: "${LLM_BASE_URL:https://api.openai.com/v1}"
+    apiKey: "${LLM_API_KEY:}"
+    model: "${LLM_MODEL:gpt-4o-mini}"
+    timeoutMs: ${LLM_TIMEOUT_MS:3500}
   premium:
     taxRate: ${PREMIUM_TAX_RATE:0.0}
   jwt:
