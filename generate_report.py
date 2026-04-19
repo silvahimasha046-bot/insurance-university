@@ -213,13 +213,19 @@ def build_report():
         "personalised plan recommendations and Know-Your-Customer (KYC) document submission."
     )
     rb.p(
-        "The system employs a three-tier microservices architecture consisting of an Angular 21 single-page application, "
-        "a Spring Boot 3.3.5 RESTful API backend with MySQL 8.4 persistence, and a FastAPI-based AI engine. "
+        "The system employs a four-tier microservices architecture consisting of an Angular 21 single-page application, "
+        "a Spring Boot 3.3.5 RESTful API backend with MySQL 8.4 persistence (16 JPA entities), and a FastAPI-based AI engine "
+        "with an integrated agentic chat subsystem. "
         "The AI engine implements a multi-stage scoring pipeline incorporating Classification and Regression Tree (CART) "
         "underwriting rules, collaborative filtering heuristics, and trainable feature weights derived from historical "
-        "policy outcome data. The platform supports two user roles\u2014Customer and Administrator\u2014with JWT-based "
+        "policy outcome data. A novel agentic chat subsystem powered by a Groq-hosted LLM (Meta LLaMA-4 Scout) provides "
+        "natural-language insurance advisory through five specialised tools (knowledge base, database query, web search, "
+        "calculator, and policy scoring), with FAISS-based vector memory for long-term conversational context. "
+        "Server-Sent Events (SSE) enable real-time streamed responses. "
+        "The platform supports two user roles\u2014Customer and Administrator\u2014with JWT-based "
         "authentication and role-based access control. Key results demonstrate the system\u2019s ability to rank products "
-        "with explainable scoring, provide real-time premium estimates with affordability analysis, and offer an "
+        "with explainable scoring, provide real-time premium estimates with affordability analysis, deliver conversational "
+        "insurance guidance via an agentic AI chat, and offer an "
         "administrative console for product management, eligibility rule configuration, and AI model lifecycle governance. "
         "The project successfully delivers a functional prototype that streamlines insurance advisory services and "
         "lays the groundwork for data-driven product innovation in the Sri Lankan insurance market."
@@ -285,10 +291,10 @@ def build_report():
         ("Figure 2", "Fishbone (Ishikawa) Diagram \u2013 Insurance Advisory Problems"),
         ("Figure 3", "Onion Model \u2013 Stakeholder View"),
         ("Figure 4", "High-Level Architecture Diagram"),
-        ("Figure 5", "Use Case Diagram"),
-        ("Figure 6", "Class Diagram \u2013 Backend Entity Model"),
+        ("Figure 5", "Use Case Diagram (21 Use Cases)"),
+        ("Figure 6", "Class Diagram \u2013 Backend Entity Model (16 Entities)"),
         ("Figure 7", "Sequence Diagram \u2013 Get Insurance Recommendations"),
-        ("Figure 8", "Entity-Relationship Diagram"),
+        ("Figure 8", "Entity-Relationship Diagram (16 Tables)"),
         ("Figure 9", "Wizard Step 1 \u2013 Personal Information"),
         ("Figure 10", "Wizard Step 2 \u2013 Financial Information"),
         ("Figure 11", "Wizard Step 3 \u2013 Insurance Preferences"),
@@ -298,7 +304,7 @@ def build_report():
         ("Figure 15", "Admin Dashboard"),
         ("Figure 16", "Admin Training Management"),
         ("Figure 17", "Admin Logs Viewer"),
-        ("Figure 18", "Customer Chat Interface"),
+        ("Figure 18", "Open Chat (Agentic AI) Interface"),
     ]
     rb.table(["Figure No.", "Title"], [[f[0], f[1]] for f in figures])
 
@@ -337,11 +343,14 @@ def build_report():
     )
     rb.p(
         "The system is architected as a set of loosely coupled microservices: an Angular single-page application "
-        "provides the user interface for both customer and administrator journeys; a Spring Boot RESTful API "
-        "manages authentication, session orchestration, product catalogues, eligibility rules, and audit logging; "
+        "provides the user interface for both customer and administrator journeys, including an agentic open-chat "
+        "interface with real-time SSE streaming; a Spring Boot RESTful API "
+        "manages authentication, session orchestration, chat services, product catalogues, eligibility rules, and audit logging; "
         "a FastAPI-based AI engine executes a multi-stage scoring pipeline that includes CART-based underwriting "
         "checks, collaborative filtering heuristics, premium estimation, affordability analysis, and lapse-risk "
-        "prediction; and a MySQL relational database persists all transactional and reference data."
+        "prediction, and additionally hosts an agentic chat subsystem powered by a Groq-hosted LLM with five "
+        "specialised tools and FAISS-based long-term vector memory; and a MySQL relational database (16 tables) "
+        "persists all transactional and reference data including chat messages."
     )
     rb.p(
         "Beyond the customer-facing recommendation journey, Insurance University provides a comprehensive "
@@ -585,20 +594,26 @@ def build_report():
             ["Frontend SPA", "Angular + Angular Material + Tailwind CSS", "Angular 21", "4200"],
             ["Backend API", "Spring Boot (Java, Maven)", "3.3.5 / Java 17", "8080"],
             ["AI Engine", "FastAPI + Uvicorn + Pydantic", "Python 3.11+", "8000"],
-            ["Database", "MySQL", "8.4", "3306"],
+            ["Agentic Chat LLM", "Groq API (meta-llama/llama-4-scout-17b)", "OpenAI SDK", "\u2014"],
+            ["Vector Memory", "FAISS + sentence-transformers", "all-MiniLM-L6-v2", "\u2014"],
+            ["Database", "MySQL", "8.4 (16 tables)", "3306"],
             ["Orchestration", "Docker Compose", "Latest", "\u2014"],
             ["Authentication", "JWT (JJWT library, HMAC-SHA256)", "\u2014", "\u2014"],
+            ["Streaming", "Server-Sent Events (SSE)", "\u2014", "\u2014"],
         ],
     )
     rb.p("")
     rb.insert_image(os.path.join(DIAGRAM_DIR, "04_high_level_arch.png"), "Figure 4: High-Level Architecture Diagram")
     rb.p(
-        "The architecture follows a three-tier pattern. The Angular SPA communicates with the Spring Boot "
-        "API via REST over HTTP, attaching JWT Bearer tokens for authenticated routes. The Spring Boot API "
-        "communicates with the FastAPI AI engine via REST for scoring and training operations. The MySQL "
-        "database stores all persistent data including user accounts, customer sessions, answers, documents, "
-        "products, rules, logs, and model metadata. The AI engine persists trained model artefacts as JSON "
-        "files on the local filesystem."
+        "The architecture follows a four-tier pattern. The Angular SPA communicates with the Spring Boot "
+        "API via REST over HTTP, attaching JWT Bearer tokens for authenticated routes. For the agentic chat "
+        "feature, Server-Sent Events (SSE) provide real-time streamed responses. The Spring Boot API "
+        "communicates with the FastAPI AI engine via REST for scoring, training, and chat operations. The AI engine "
+        "connects to the Groq LLM API for natural-language processing and uses FAISS for vector-based long-term "
+        "memory storage. The MySQL "
+        "database (16 tables) stores all persistent data including user accounts, customer sessions, answers, documents, "
+        "products, rules, logs, chat messages, and model metadata. The AI engine persists trained model artefacts as JSON "
+        "files and FAISS indices on the local filesystem."
     )
     rb.p(
         "For local development, Docker Compose orchestrates MySQL and the AI engine as containerised services, "
@@ -608,10 +623,22 @@ def build_report():
 
     rb.h2("5b  Partner or Collaborative Applications")
     rb.p(
-        "In its current prototype state, Insurance University operates as a self-contained system without "
-        "external API integrations. However, the architecture is designed to accommodate future integrations "
-        "with the following partner systems:"
+        "Insurance University integrates with one external AI inference service and is designed "
+        "to accommodate additional partner integrations in the future."
     )
+    rb.p("Active Integration", bold=True)
+    rb.bullet(
+        "Groq Cloud API (meta-llama/llama-4-scout-17b-16e-instruct): The agentic open chat subsystem "
+        "uses the Groq inference platform via the OpenAI-compatible SDK for LLM-powered conversational "
+        "AI. Groq provides high-speed inference for the ReAct tool-calling loop, enabling real-time "
+        "streaming responses. The integration supports tool calling, structured outputs, and token tracking."
+    )
+    rb.bullet(
+        "DuckDuckGo Search API: The agentic chat\u2019s web_search tool queries DuckDuckGo for real-time "
+        "information about insurance regulations, market trends, and external topics not covered by the "
+        "internal knowledge base."
+    )
+    rb.p("Planned Future Integrations", bold=True)
     rb.bullet(
         "Payment Gateway (e.g., PayHere, LankaPay): For online premium payment collection during the "
         "proposal submission stage."
@@ -643,11 +670,12 @@ def build_report():
 
     rb.h2("6a  Use Case Diagrams")
     rb.p(
-        "The system supports two primary actors: Customer and Administrator. The Customer actor interacts "
+        "The system supports three primary actors: Customer, Administrator, and AI Engine. The Customer actor interacts "
         "with the public-facing journey (registration, wizard completion, recommendation viewing, product "
-        "comparison, document upload, and proposal submission). The Administrator actor interacts with the "
+        "comparison, document upload, proposal submission, and agentic chat). The Administrator actor interacts with the "
         "back-office console (product management, rule management, training dataset upload, model lifecycle "
-        "management, log analysis, and unmatched needs tracking)."
+        "management, log analysis, and unmatched needs tracking). The AI Engine actor provides scoring and "
+        "agentic chat capabilities powered by a Groq-hosted LLM with five specialised tools."
     )
     rb.insert_image(os.path.join(DIAGRAM_DIR, "05_use_case.png"), "Figure 5: Use Case Diagram")
     rb.p("The use case diagram illustrates the following use cases grouped by actor:")
@@ -662,18 +690,19 @@ def build_report():
     rb.bullet("UC-08: Review and Submit Proposal")
     rb.bullet("UC-09: View Past Sessions and Recommendations")
     rb.bullet("UC-10: Submit Feedback Survey")
-    rb.bullet("UC-11: Chat-Based Data Capture (Alternative Wizard)")
+    rb.bullet("UC-11: Wizard Chat (Chat-Based Data Capture)")
+    rb.bullet("UC-12: Open Chat \u2013 Agentic AI Insurance Advisory (with 5 tools: KB, DB, Web, Calculator, Scoring)")
 
     rb.p("Administrator Use Cases:", bold=True)
-    rb.bullet("UC-12: Admin Login")
-    rb.bullet("UC-13: Manage Insurance Products (CRUD)")
-    rb.bullet("UC-14: Manage Insurance Categories")
-    rb.bullet("UC-15: Manage Eligibility Rules (CRUD)")
-    rb.bullet("UC-16: Upload Training Dataset")
-    rb.bullet("UC-17: Manage AI Model Versions")
-    rb.bullet("UC-18: View and Export Event Logs")
-    rb.bullet("UC-19: Manage Unmatched Customer Needs")
-    rb.bullet("UC-20: Manage Pricing Tables")
+    rb.bullet("UC-13: Admin Login")
+    rb.bullet("UC-14: Manage Insurance Products (CRUD)")
+    rb.bullet("UC-15: Manage Insurance Categories")
+    rb.bullet("UC-16: Manage Eligibility Rules (CRUD)")
+    rb.bullet("UC-17: Upload Training Dataset")
+    rb.bullet("UC-18: Manage AI Model Versions")
+    rb.bullet("UC-19: View and Export Event Logs")
+    rb.bullet("UC-20: Manage Unmatched Customer Needs")
+    rb.bullet("UC-21: Manage Pricing Tables")
 
     rb.h2("6b  Individual Product Use Cases")
     rb.p("Use Case 1: Get Insurance Recommendations (UC-04)", bold=True)
@@ -802,7 +831,13 @@ def build_report():
             ["FR-22", "The system shall provide searchable, filterable, and exportable event logs.", "Should", "UC-18"],
             ["FR-23", "The system shall track unmatched customer needs for product gap analysis.", "Should", "UC-19"],
             ["FR-24", "The system shall persist full AI request/response payloads for audit trail.", "Must", "UC-04"],
-            ["FR-25", "The system shall hash session identifiers (SHA-256) before writing to event logs.", "Must", "UC-18"],
+            ["FR-25", "The system shall hash session identifiers (SHA-256) before writing to event logs.", "Must", "UC-19"],
+            ["FR-26", "The system shall provide an agentic open chat interface with SSE-streamed real-time responses.", "Must", "UC-12"],
+            ["FR-27", "The agentic chat shall support five tools: knowledge base, database query, web search, calculator, and policy scoring.", "Must", "UC-12"],
+            ["FR-28", "The system shall maintain long-term conversational memory using FAISS vector storage.", "Should", "UC-12"],
+            ["FR-29", "The agentic chat shall persist all messages (user, assistant, tool) in the open_chat_messages table.", "Must", "UC-12"],
+            ["FR-30", "The wizard chat shall support both deterministic and LLM-based extraction modes for data capture.", "Should", "UC-11"],
+            ["FR-31", "The system shall enforce configurable per-user daily and monthly token limits for open chat.", "Must", "UC-12"],
         ],
     )
 
@@ -810,8 +845,8 @@ def build_report():
     rb.add_page_break()
     rb.h1("8  Data Requirements")
     rb.p(
-        "Insurance University manages a rich data model comprising 15 JPA entities that capture user identity, "
-        "customer journey state, product catalogues, eligibility rules, AI model metadata, and audit logs. "
+        "Insurance University manages a rich data model comprising 16 JPA entities that capture user identity, "
+        "customer journey state, product catalogues, eligibility rules, AI model metadata, chat messages, and audit logs. "
         "The following table summarises the core entities and their primary data attributes."
     )
     rb.p("Table 4: JPA Entity Summary", bold=True, italic=True)
@@ -823,6 +858,7 @@ def build_report():
             ["CustomerAnswerEntity", "customer_answers", "id, sessionId (FK), key, valueJson (JSON), createdAt", "N:1 Session"],
             ["CustomerDocumentEntity", "customer_documents", "id, sessionId, userEmail, docType, docSide, storedPath, versionNo, latestForSession", "N:1 Session"],
             ["CustomerChatMessageEntity", "customer_chat_messages", "id, sessionId, role (USER/AGENT), message (TEXT), metadataJson", "N:1 Session"],
+            ["OpenChatMessage", "open_chat_messages", "id, sessionId, userId, role (USER/ASSISTANT/TOOL), content (TEXT), toolName, toolArgs (JSON), toolResult (TEXT), tokensUsed, createdAt", "\u2014"],
             ["RecommendationRunEntity", "recommendation_runs", "id, sessionId, requestJson, responseJson, createdAt", "N:1 Session"],
             ["SessionLogEntity", "session_logs", "id, sessionHash (SHA-256), timestamp, eventType, userSegment, payloadJson", "\u2014"],
             ["InsuranceCategoryEntity", "insurance_categories", "id, code, name, description, active, displayOrder", "1:N Subcategories, Products"],
@@ -1022,12 +1058,12 @@ def build_report():
 
     rb.h2("11a  Class Diagrams")
     rb.p(
-        "The system\u2019s persistent data model comprises 15 JPA entity classes organised across the "
+        "The system\u2019s persistent data model comprises 16 JPA entity classes organised across the "
         "following domain areas: User Authentication, Customer Journey, Product Catalogue, Rules Engine, "
-        "Training/Model Management, and Analytics. The complete class diagram with attributes and "
+        "Training/Model Management, Agentic Chat, and Analytics. The complete class diagram with attributes and "
         "operations is presented below."
     )
-    rb.insert_image(os.path.join(DIAGRAM_DIR, "06_class_diagram.png"), "Figure 6: Class Diagram \u2013 Backend Entity Model")
+    rb.insert_image(os.path.join(DIAGRAM_DIR, "06_class_diagram.png"), "Figure 6: Class Diagram \u2013 Backend Entity Model (16 Entities)")
     rb.p("The key classes and their relationships are as follows:", bold=True)
     rb.p(
         "UserEntity represents the core identity for both customer and administrator users. It contains "
@@ -1041,6 +1077,13 @@ def build_report():
         "email. It maintains one-to-many relationships with CustomerAnswerEntity (wizard responses), "
         "CustomerDocumentEntity (KYC uploads), RecommendationRunEntity (AI scoring results), and "
         "CustomerChatMessageEntity (conversational data capture messages)."
+    )
+    rb.p(
+        "OpenChatMessage is a new entity introduced for the agentic chat subsystem. It stores all messages "
+        "exchanged during open chat sessions, including user messages, assistant responses, and tool call "
+        "results. Key fields include sessionId, userId, role (USER/ASSISTANT/TOOL), content (TEXT), "
+        "toolName, toolArgs (JSON), toolResult (TEXT), tokensUsed (for rate limiting), and createdAt. "
+        "This entity enables full auditability of AI-generated insurance advice and tool usage."
     )
     rb.p(
         "ProductEntity represents an insurance product within a hierarchical catalogue. It belongs to "
@@ -1186,7 +1229,7 @@ def build_report():
         "operational, audit, and regulatory purposes, and ephemeral data that exists only during "
         "transient processes."
     )
-    rb.insert_image(os.path.join(DIAGRAM_DIR, "08_er_diagram.png"), "Figure 8: Entity-Relationship Diagram")
+    rb.insert_image(os.path.join(DIAGRAM_DIR, "08_er_diagram.png"), "Figure 8: Entity-Relationship Diagram (16 Tables)")
     rb.p("Table 6: Persistent vs Ephemeral Data Classification", bold=True, italic=True)
     rb.table(
         ["Data Item", "Classification", "Storage Mechanism", "Rationale"],
@@ -1197,6 +1240,7 @@ def build_report():
             ["KYC documents (NIC, medical, income)", "Persistent", "Filesystem + MySQL metadata", "Required for proposal verification and regulatory compliance"],
             ["Recommendation runs (request/response JSON)", "Persistent", "MySQL (recommendation_runs)", "Required for audit trail and regulatory review"],
             ["Event logs (hashed session, event type, payload)", "Persistent", "MySQL (session_logs)", "Required for analytics, compliance, and debugging"],
+            ["Open chat messages (user, assistant, tool)", "Persistent", "MySQL (open_chat_messages)", "Required for agentic chat audit trail and token usage tracking"],
             ["Insurance products, categories, subcategories", "Persistent", "MySQL (products, categories)", "Reference data for product catalogue"],
             ["Eligibility rules (JSON rule definitions)", "Persistent", "MySQL (eligibility_rules)", "Business rules for underwriting"],
             ["Training datasets (CSV files)", "Persistent", "Filesystem + MySQL metadata", "Required for model retraining and audit"],
@@ -1204,6 +1248,7 @@ def build_report():
             ["Model version records", "Persistent", "MySQL (model_versions)", "Required for model lifecycle governance"],
             ["Pricing tables", "Persistent", "MySQL (pricing_tables)", "Reference data for premium lookup"],
             ["Unmatched needs records", "Persistent", "MySQL (unmatched_needs)", "Product gap analysis data"],
+            ["FAISS vector indices (chat memory)", "Persistent", "AI engine filesystem (data/memory/)", "Long-term conversational memory for agentic chat"],
             ["JWT tokens (in-transit)", "Ephemeral", "HTTP headers (client memory)", "Valid for 24 hours; not persisted server-side"],
             ["Wizard form state (in-progress)", "Ephemeral", "Angular service (browser memory)", "Held in WizardStateService until saved to backend"],
             ["AI engine runtime weights (in-memory)", "Ephemeral", "Python process memory", "Loaded from persisted model artefact at startup/activation"],
@@ -1317,14 +1362,19 @@ def build_report():
     )
     rb.placeholder_image("Figure 17: Admin Logs Viewer")
 
-    rb.h3("Chat Interface")
+    rb.h3("Open Chat Interface (Agentic AI)")
     rb.p(
-        "The chat interface provides an alternative conversational approach to the wizard. Customers "
-        "can describe their insurance needs in natural language, and the system extracts structured "
-        "answers using either deterministic parsing or LLM-based extraction (configurable via "
-        "app.chat.extractionMode). Chat messages are persisted for session history."
+        "The open chat interface provides a conversational AI experience for insurance advisory. "
+        "Customers can ask questions about insurance products, request personalised recommendations, "
+        "and explore coverage options through natural language. The interface features:\n"
+        "\u2022 Real-time SSE-streamed responses rendered token-by-token.\n"
+        "\u2022 Tool call visualisation showing which tools the AI used (knowledge base, calculator, etc.).\n"
+        "\u2022 Markdown-formatted responses for structured information display.\n"
+        "\u2022 Conversation history persistence and session management.\n"
+        "\u2022 Five specialised tools: insurance knowledge base, database query, web search, calculator, "
+        "and policy scoring."
     )
-    rb.placeholder_image("Figure 18: Customer Chat Interface")
+    rb.placeholder_image("Figure 18: Open Chat (Agentic AI) Interface")
 
     # ═══════════════════════════════════════════════════════════════════════
     # PART IV: IMPLEMENTATION
@@ -1523,7 +1573,74 @@ def build_report():
     )
     rb.p("This training pipeline is novel code, designed for this project.", italic=True)
 
-    rb.h3("6. New Skills Gained")
+    rb.h3("6. Agentic Chat Subsystem (Open Chat)")
+    rb.p(
+        "The most significant new feature is the agentic AI chat subsystem, which provides a natural-language "
+        "insurance advisory experience. The subsystem spans all four tiers of the architecture:"
+    )
+    rb.p("AI Engine Chat Module (ai-engine/app/chat/)", bold=True)
+    rb.p(
+        "The agentic chat loop is implemented in agent.py using a ReAct-style (Reasoning + Action) pattern. "
+        "A Groq-hosted LLM (meta-llama/llama-4-scout-17b-16e-instruct) serves as the reasoning core, accessed "
+        "via the OpenAI SDK. The agent operates in a loop: it receives the user message and conversation history, "
+        "generates a response using the LLM, and if the LLM invokes a tool, the agent executes the tool, feeds "
+        "the result back, and iterates until a final text response is produced."
+    )
+    rb.p("Five specialised tools are defined in tools.py:", bold=True)
+    rb.bullet(
+        "insurance_knowledge_base: Queries the MySQL database for product details, categories, eligibility rules, "
+        "and pricing tables using parameterised SQL queries. Returns structured information about available products."
+    )
+    rb.bullet(
+        "database_query: Executes read-only SQL queries against the insurance_university database with a "
+        "100-row limit for safety. Provides general data access for answering data-driven questions."
+    )
+    rb.bullet(
+        "web_search: Performs real-time web searches using the DuckDuckGo API to answer questions about "
+        "external insurance topics, regulations, or market trends."
+    )
+    rb.bullet(
+        "calculator: Evaluates mathematical expressions safely using the simpleeval library. Used for "
+        "premium calculations, coverage estimates, and financial projections."
+    )
+    rb.bullet(
+        "policy_scoring: Triggers the existing /score endpoint to generate AI-powered product recommendations "
+        "based on a user's profile, bridging the agentic chat with the scoring pipeline."
+    )
+    rb.p("FAISS Vector Memory (memory.py)", bold=True)
+    rb.p(
+        "Long-term conversational memory is implemented using FAISS (Facebook AI Similarity Search) with "
+        "sentence-transformers (all-MiniLM-L6-v2) for embedding generation. Each user-assistant exchange "
+        "is embedded and stored in a per-user FAISS index. When a new conversation begins, relevant past "
+        "interactions are retrieved via similarity search and injected into the system prompt as context. "
+        "This enables the chat to maintain continuity across sessions without re-asking questions."
+    )
+    rb.p("Backend Chat Services", bold=True)
+    rb.p(
+        "The Spring Boot backend provides two chat modes through separate controllers and services:\n"
+        "\u2022 OpenChatController: Handles the agentic open chat with endpoints for streaming (SSE), "
+        "message history retrieval, session management, and memory clearing. It enforces per-user "
+        "daily and monthly token limits.\n"
+        "\u2022 CustomerChatService / ChatOrchestrator: Handles the wizard chat with two extraction modes "
+        "(deterministic pattern matching and LLM-based extraction) configurable via app.chat.extractionMode. "
+        "The DeterministicChatOrchestrator uses regex patterns to extract structured data from natural language, "
+        "while the LlmChatOrchestrator delegates to the AI engine's /chat/message endpoint."
+    )
+    rb.p("Frontend Open Chat Component", bold=True)
+    rb.p(
+        "The Angular open-chat component provides a full-featured chat interface with SSE-based streaming. "
+        "Messages are received token-by-token via EventSource and rendered in real-time with Markdown "
+        "formatting. Tool calls are displayed with collapsible detail panels showing the tool name, "
+        "arguments, and results. The component handles session management and message history."
+    )
+    rb.p(
+        "The agentic chat subsystem is entirely novel code, designed and developed specifically for "
+        "this project. It represents the most significant technical contribution beyond the original "
+        "scoring pipeline.",
+        italic=True,
+    )
+
+    rb.h3("7. New Skills Gained")
     rb.p(
         "The development of Insurance University required acquiring and applying several new technical "
         "skills beyond the standard curriculum:"
@@ -1548,6 +1665,18 @@ def build_report():
     rb.bullet(
         "Angular 21 Standalone Components: Adopting Angular\u2019s latest standalone component architecture "
         "and functional route guards, which differ significantly from the NgModule-based patterns."
+    )
+    rb.bullet(
+        "Agentic AI Development: Implementing a ReAct-style tool-calling agent with LLM integration "
+        "(Groq API via OpenAI SDK), custom tool definitions, and iterative reasoning loops."
+    )
+    rb.bullet(
+        "Vector Databases and Embeddings: Building a FAISS-based semantic memory system with "
+        "sentence-transformers for embedding generation and similarity-based retrieval."
+    )
+    rb.bullet(
+        "Server-Sent Events (SSE): Implementing real-time streaming from backend to frontend for "
+        "token-by-token chat response delivery."
     )
 
     # ── SECTION 14 ────────────────────────────────────────────────────────
@@ -1580,6 +1709,12 @@ def build_report():
             ["AI Engine", "/train endpoint with valid CSV", "Contract/Integration", "High"],
             ["AI Engine", "CART underwriting rule correctness", "Unit", "High"],
             ["Performance", "Recommendation response time (< 5s for 5 products)", "Performance", "Medium"],
+            ["Open Chat", "Agentic SSE streaming with tool calls", "Functional/Integration", "High"],
+            ["Open Chat", "FAISS memory retrieval across sessions", "Functional", "Medium"],
+            ["Open Chat", "Token limit enforcement (daily/monthly)", "Functional", "Medium"],
+            ["Open Chat", "Tool invocation: knowledge base, calculator, web search", "Integration", "High"],
+            ["Wizard Chat", "Deterministic extraction of structured answers", "Functional", "High"],
+            ["Wizard Chat", "LLM-based extraction mode fallback", "Integration", "Medium"],
         ],
     )
     rb.p("")
@@ -1723,6 +1858,30 @@ def build_report():
             "post": "Verify expected behaviour matches security filter chain rules.",
             "notes": "Documents actual RBAC behaviour for cross-role scenarios."
         },
+        {
+            "id": "TC011",
+            "desc": "Verify agentic open chat with SSE streaming and tool invocation",
+            "pre": "Customer logged in. AI engine running with Groq API key configured.",
+            "steps": "a. Navigate to /open-chat\nb. Type: 'What life insurance products are available?'\nc. Send message\nd. Observe SSE stream response.",
+            "expected": "SSE stream delivers tokens incrementally. Agent invokes insurance_knowledge_base tool. Final response lists available products with details.",
+            "actual": "[To be filled during testing]",
+            "criteria": "Pass if SSE stream completes, tool call visible in UI, response contains accurate product data from database.",
+            "data": "User message: 'What life insurance products are available?'",
+            "post": "OpenChatMessage records created (USER + ASSISTANT + TOOL roles). Token usage tracked.",
+            "notes": "Integration test spanning frontend SSE, backend streaming, AI engine agent loop, and Groq API."
+        },
+        {
+            "id": "TC012",
+            "desc": "Verify wizard chat deterministic extraction mode",
+            "pre": "Customer logged in. Session created. app.chat.extractionMode=deterministic.",
+            "steps": "a. Navigate to /chat\nb. Type: 'I am 32 years old, non-smoker, married with 2 kids'\nc. Send message.",
+            "expected": "System extracts structured answers: age=32, smoker=false, dependents=2. Extracted fields saved as CustomerAnswerEntity records.",
+            "actual": "[To be filled during testing]",
+            "criteria": "Pass if deterministic parser correctly identifies age, smoker status, and dependents from natural language.",
+            "data": "User message: 'I am 32 years old, non-smoker, married with 2 kids'",
+            "post": "CustomerAnswerEntity records created for extracted key-value pairs.",
+            "notes": "Tests DeterministicChatOrchestrator regex patterns."
+        },
     ]
 
     for tc in test_cases:
@@ -1814,9 +1973,9 @@ def build_report():
         "advisory process. The key achievements of the project are:"
     )
     rb.numbered(
-        "Three-Tier Microservices Architecture: A production-ready architecture comprising an Angular 21 "
-        "SPA, Spring Boot 3.3.5 REST API, and FastAPI AI engine, orchestrated via Docker Compose. This "
-        "architecture supports independent scaling and deployment of each tier."
+        "Four-Tier Microservices Architecture: A production-ready architecture comprising an Angular 21 "
+        "SPA, Spring Boot 3.3.5 REST API, FastAPI AI engine with an agentic chat subsystem, and MySQL 8.4, "
+        "orchestrated via Docker Compose. This architecture supports independent scaling and deployment of each tier."
     )
     rb.numbered(
         "Multi-Stage AI Scoring Engine: A comprehensive scoring pipeline that combines CART-based "
@@ -1825,9 +1984,20 @@ def build_report():
         "engine produces explainable, transparent recommendations with human-readable reasons."
     )
     rb.numbered(
+        "Agentic AI Chat Subsystem: A ReAct-style conversational AI agent powered by Groq (LLaMA 4 Scout) "
+        "with five specialised tools (insurance knowledge base, database query, web search, calculator, "
+        "policy scoring), FAISS-based long-term vector memory using sentence-transformers, and real-time "
+        "SSE streaming. This subsystem enables natural-language insurance advisory beyond the structured wizard."
+    )
+    rb.numbered(
         "Trainable Model Architecture: An end-to-end model lifecycle management system that enables "
         "administrators to upload historical policy outcome data, train updated scoring weights, and "
         "promote models to production\u2014all through the web-based admin console."
+    )
+    rb.numbered(
+        "Dual Chat Modes: The platform offers two conversational interfaces\u2014a Wizard Chat with "
+        "deterministic and LLM-based data extraction for structured answer capture, and an Open Chat "
+        "with full agentic capabilities for free-form insurance advisory."
     )
     rb.numbered(
         "Comprehensive Customer Journey: A structured wizard interface (3 steps) with progress guards, "
@@ -1856,10 +2026,10 @@ def build_report():
         "for future enhancement:"
     )
     rb.numbered(
-        "LLM-Based Chat Extraction: The conversational data capture mode (chat interface) supports "
-        "both deterministic and LLM-based extraction, but the LLM integration is partially implemented. "
-        "Full integration with a large language model (e.g., GPT-4 or a local model) would significantly "
-        "enhance the conversational experience."
+        "Advanced RAG Integration: While the current FAISS memory provides conversational continuity, "
+        "a full Retrieval-Augmented Generation (RAG) pipeline with insurance policy document embeddings "
+        "would enable the agentic chat to cite specific policy terms, conditions, and exclusion clauses "
+        "directly from product documentation."
     )
     rb.numbered(
         "Payment Gateway Integration: The current prototype does not include online premium payment "
@@ -1908,6 +2078,7 @@ def build_report():
     rb.table(
         ["Term", "Definition"],
         [
+            ["Agentic AI", "An AI system that autonomously selects and executes tools to fulfil user requests, using iterative reasoning loops."],
             ["API", "Application Programming Interface \u2013 a set of rules that allows software components to communicate."],
             ["CART", "Classification and Regression Tree \u2013 a decision tree algorithm used for classification and prediction."],
             ["CORS", "Cross-Origin Resource Sharing \u2013 a security mechanism that controls which origins can access a web API."],
@@ -1915,7 +2086,9 @@ def build_report():
             ["CSRF", "Cross-Site Request Forgery \u2013 an attack that tricks a user into submitting unintended requests."],
             ["Docker", "A platform for building, running, and managing containerised applications."],
             ["Docker Compose", "A tool for defining and running multi-container Docker applications using a YAML configuration file."],
+            ["FAISS", "Facebook AI Similarity Search \u2013 a library for efficient similarity search and clustering of dense vectors."],
             ["FastAPI", "A modern Python web framework for building APIs with automatic validation and documentation."],
+            ["Groq", "A cloud inference platform providing high-speed access to large language models via an OpenAI-compatible API."],
             ["HMAC-SHA256", "Hash-based Message Authentication Code using SHA-256 \u2013 a cryptographic algorithm for signing JWTs."],
             ["IRCSL", "Insurance Regulatory Commission of Sri Lanka \u2013 the statutory body regulating insurance in Sri Lanka."],
             ["JPA", "Java Persistence API \u2013 a specification for object-relational mapping in Java applications."],
@@ -1925,10 +2098,13 @@ def build_report():
             ["PDPA", "Personal Data Protection Act \u2013 Sri Lanka\u2019s data protection legislation."],
             ["PEP", "Politically Exposed Person \u2013 an individual in a prominent public role, subject to enhanced due diligence."],
             ["RBAC", "Role-Based Access Control \u2013 a method of restricting system access based on user roles."],
+            ["ReAct", "Reasoning and Action \u2013 a prompting paradigm where an LLM alternates between reasoning steps and tool actions."],
             ["REST", "Representational State Transfer \u2013 an architectural style for designing networked applications."],
             ["SPA", "Single Page Application \u2013 a web application that loads a single HTML page and dynamically updates content."],
             ["Spring Boot", "A Java framework that simplifies the development of production-ready Spring-based applications."],
+            ["SSE", "Server-Sent Events \u2013 a standard for pushing real-time updates from server to client over HTTP."],
             ["UUID", "Universally Unique Identifier \u2013 a 128-bit label used for unique identification."],
+            ["Vector Embedding", "A dense numerical representation of text that captures semantic meaning for similarity search."],
             ["WCAG", "Web Content Accessibility Guidelines \u2013 international standards for web accessibility."],
         ],
     )
@@ -1941,21 +2117,24 @@ def build_report():
     refs = [
         "[1]\tAlexander, I. and Robertson, S. (2004) 'Understanding Project Sociology by Modeling Stakeholders', IEEE Software, 21(1), pp. 23\u201327.",
         "[2]\tAngular Team (2026) Angular Documentation. Available at: https://angular.dev (Accessed: 15 April 2026).",
-        "[3]\tBasel Committee on Banking Supervision (2017) 'Customer Due Diligence for Banks', Bank for International Settlements.",
+        "[3]\tBasel Committee on Banking Supervision (2017) 'Customer DueLigence for Banks', Bank for International Settlements.",
         "[4]\tBreiman, L. et al. (1984) Classification and Regression Trees. Boca Raton: CRC Press.",
         "[5]\tFowler, M. (2004) UML Distilled. 3rd edn. Boston: Pearson Education.",
         "[6]\tGovernment of Sri Lanka (2000) Regulation of Insurance Industry Act No. 43 of 2000. Colombo: Government Press.",
         "[7]\tGovernment of Sri Lanka (2022) Personal Data Protection Act No. 9 of 2022. Colombo: Government Press.",
-        "[8]\tJones, C. and Sheridan, M. (2015) 'Insurance Underwriting Decision Models: A Survey', Journal of Risk and Insurance, 82(3), pp. 621\u2013645.",
-        "[9]\tOWASP Foundation (2021) OWASP Top Ten. Available at: https://owasp.org/www-project-top-ten/ (Accessed: 10 April 2026).",
-        "[10]\tRamakrishnan, R. and Gehrke, J. (2003) Database Management Systems. 3rd edn. New York: McGraw-Hill.",
-        "[11]\tRichardson, C. (2018) Microservices Patterns. Shelter Island: Manning Publications.",
-        "[12]\tRobertson, S. and Robertson, J. (2012) Mastering the Requirements Process. 3rd edn. Upper Saddle River: Addison-Wesley.",
-        "[13]\tSommerville, I. (2016) Software Engineering. 10th edn. Harlow: Pearson Education.",
-        "[14]\tSpring Team (2024) Spring Boot Reference Documentation. Available at: https://docs.spring.io/spring-boot/docs/current/reference/html/ (Accessed: 12 April 2026).",
-        "[15]\tSwiss Re Institute (2023) 'World Insurance: The Recovery Gains Pace', Sigma No. 3/2023.",
-        "[16]\tTiram\u00edsou Sebastien (2023) FastAPI Documentation. Available at: https://fastapi.tiangolo.com (Accessed: 12 April 2026).",
-        "[17]\tW3C (2018) Web Content Accessibility Guidelines (WCAG) 2.1. Available at: https://www.w3.org/TR/WCAG21/ (Accessed: 14 April 2026).",
+        "[8]\tJohnson, J., Douze, M. and J\u00e9gou, H. (2021) 'Billion-Scale Similarity Search with GPUs', IEEE Transactions on Big Data, 7(3), pp. 535\u2013547.",
+        "[9]\tJones, C. and Sheridan, M. (2015) 'Insurance Underwriting Decision Models: A Survey', Journal of Risk and Insurance, 82(3), pp. 621\u2013645.",
+        "[10]\tOWASP Foundation (2021) OWASP Top Ten. Available at: https://owasp.org/www-project-top-ten/ (Accessed: 10 April 2026).",
+        "[11]\tRamakrishnan, R. and Gehrke, J. (2003) Database Management Systems. 3rd edn. New York: McGraw-Hill.",
+        "[12]\tRichardson, C. (2018) Microservices Patterns. Shelter Island: Manning Publications.",
+        "[13]\tRobertson, S. and Robertson, J. (2012) Mastering the Requirements Process. 3rd edn. Upper Saddle River: Addison-Wesley.",
+        "[14]\tSommerville, I. (2016) Software Engineering. 10th edn. Harlow: Pearson Education.",
+        "[15]\tSpring Team (2024) Spring Boot Reference Documentation. Available at: https://docs.spring.io/spring-boot/docs/current/reference/html/ (Accessed: 12 April 2026).",
+        "[16]\tSwiss Re Institute (2023) 'World Insurance: The Recovery Gains Pace', Sigma No. 3/2023.",
+        "[17]\tTiram\u00edsou Sebastien (2023) FastAPI Documentation. Available at: https://fastapi.tiangolo.com (Accessed: 12 April 2026).",
+        "[18]\tW3C (2018) Web Content Accessibility Guidelines (WCAG) 2.1. Available at: https://www.w3.org/TR/WCAG21/ (Accessed: 14 April 2026).",
+        "[19]\tYao, S. et al. (2023) 'ReAct: Synergizing Reasoning and Acting in Language Models', ICLR 2023.",
+        "[20]\tGroq Inc. (2025) Groq API Documentation. Available at: https://console.groq.com/docs (Accessed: 15 April 2026).",
     ]
     for ref in refs:
         rb.p(ref)
@@ -2047,6 +2226,11 @@ def build_report():
             ["PUT", "/api/admin/pricing-tables/{id}", "JWT (ADMIN)", "Update pricing table"],
             ["DELETE", "/api/admin/pricing-tables/{id}", "JWT (ADMIN)", "Delete pricing table"],
             ["POST", "/api/admin/dev/seed", "JWT (ADMIN)", "Seed default products"],
+            ["GET", "/api/open-chat/stream", "JWT (USER)", "SSE stream agentic chat response"],
+            ["GET", "/api/open-chat/messages", "JWT (USER)", "Get open chat message history"],
+            ["GET", "/api/open-chat/sessions", "JWT (USER)", "List open chat sessions"],
+            ["DELETE", "/api/open-chat/sessions/{id}", "JWT (USER)", "Delete open chat session"],
+            ["DELETE", "/api/open-chat/memory", "JWT (USER)", "Clear FAISS vector memory"],
         ],
     )
 
@@ -2058,6 +2242,10 @@ def build_report():
             ["POST", "/score", "Score products for a customer session"],
             ["POST", "/train", "Train model from CSV file upload"],
             ["POST", "/models/{artifactId}/activate", "Promote a trained model to active"],
+            ["POST", "/chat/stream", "SSE-streamed agentic chat with tool calling"],
+            ["POST", "/chat/message", "Non-streaming chat message (wizard LLM extraction)"],
+            ["GET", "/chat/health", "Chat subsystem health check (Groq/FAISS status)"],
+            ["DELETE", "/chat/memory/{user_id}", "Clear user\u2019s FAISS vector memory"],
         ],
     )
 
