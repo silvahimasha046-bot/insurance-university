@@ -40,6 +40,13 @@ export const routes: Routes = [
       import("./features/chat/chat.component").then((m) => m.ChatComponent),
   },
   {
+    path: "open-chat",
+    loadComponent: () =>
+      import("./features/open-chat/open-chat.component").then(
+        (m) => m.OpenChatComponent
+      ),
+  },
+  {
     path: "wizard/step-2",
     canMatch: [wizardProgressGuard("step-2")],
     loadComponent: () =>

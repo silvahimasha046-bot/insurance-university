@@ -17,5 +17,8 @@ ai-engine/venv/
 .vscode/
 *.iml
 
+# Environment
+.env
+
 # OS
 .DS_Store

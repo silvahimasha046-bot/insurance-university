@@ -57,6 +57,29 @@ public class RequestResponseLoggingFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
+        // SSE / streaming endpoints must NOT be wrapped in ContentCachingResponseWrapper
+        // because it buffers the entire body in memory, which prevents real-time streaming.
+        String accept = request.getHeader("Accept");
+        boolean isSseRequest = accept != null && accept.contains("text/event-stream");
+
+        if (isSseRequest) {
+            ContentCachingRequestWrapper wrappedRequest = new ContentCachingRequestWrapper(request);
+            long startTime = System.currentTimeMillis();
+            try {
+                filterChain.doFilter(wrappedRequest, response);
+            } catch (Exception ex) {
+                log.error("[ERROR] {} {} | exception={}",
+                        request.getMethod(), request.getRequestURI(), ex.getClass().getName());
+                throw ex;
+            } finally {
+                long duration = System.currentTimeMillis() - startTime;
+                logRequest(wrappedRequest);
+                log.info("[RESPONSE] {} {} | status={} | duration={}ms | body=(SSE stream)",
+                        request.getMethod(), request.getRequestURI(), response.getStatus(), duration);
+            }
+            return;
+        }
+
         ContentCachingRequestWrapper wrappedRequest = new ContentCachingRequestWrapper(request);
         ContentCachingResponseWrapper wrappedResponse = new ContentCachingResponseWrapper(response);
 

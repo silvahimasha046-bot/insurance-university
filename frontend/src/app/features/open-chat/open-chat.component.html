@@ -1,0 +1,103 @@
+<div class="bg-background-light dark:bg-background-dark min-h-screen flex justify-center">
+  <div class="w-full max-w-2xl min-h-screen flex flex-col border-x border-gray-200 dark:border-gray-800">
+
+    <!-- Header -->
+    <header class="flex items-center p-4 justify-between sticky top-0 bg-background-light dark:bg-background-dark z-10 border-b border-gray-200 dark:border-gray-800">
+      <div class="flex size-10 items-center cursor-pointer" (click)="back()">
+        <span class="material-symbols-outlined text-gray-900 dark:text-white">arrow_back</span>
+      </div>
+      <h2 class="text-gray-900 dark:text-white text-lg font-bold flex-1 text-center">AI Assistant</h2>
+      <button
+        type="button"
+        class="text-xs px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-[#1a2b3b] text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-[#243b50] transition-colors"
+        (click)="newConversation()"
+        title="Start a new conversation"
+      >
+        <span class="material-symbols-outlined text-base align-middle mr-1">add</span>
+        New
+      </button>
+    </header>
+
+    <!-- Chat Messages -->
+    <main class="flex-1 overflow-y-auto px-4 py-4 space-y-4" #chatContainer>
+
+      <div *ngFor="let msg of messages" class="flex" [class.justify-end]="msg.role === 'USER'">
+        <div
+          class="max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed"
+          [ngClass]="msg.role === 'USER'
+            ? 'bg-primary text-white rounded-br-md'
+            : 'bg-white dark:bg-[#1a2b3b] text-slate-800 dark:text-[#dce9f6] rounded-bl-md shadow-sm border border-slate-100 dark:border-[#324d67]'"
+        >
+          <!-- User message: plain text -->
+          <ng-container *ngIf="msg.role === 'USER'">{{ msg.content }}</ng-container>
+
+          <!-- Assistant message: formatted HTML -->
+          <ng-container *ngIf="msg.role === 'ASSISTANT'">
+            <div [innerHTML]="formatContent(msg.content)"></div>
+            <!-- Streaming cursor -->
+            <span *ngIf="msg.streaming" class="inline-block w-2 h-4 bg-primary dark:bg-blue-400 animate-pulse ml-0.5 align-middle rounded-sm"></span>
+          </ng-container>
+        </div>
+      </div>
+
+      <!-- Tool indicator -->
+      <div *ngIf="activeTool" class="flex items-center gap-2 pl-2">
+        <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/40">
+          <svg class="animate-spin h-3.5 w-3.5 text-amber-600 dark:text-amber-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+          </svg>
+          <span class="text-xs font-medium text-amber-700 dark:text-amber-300">{{ getToolDisplayName(activeTool) }}…</span>
+        </div>
+      </div>
+
+      <!-- Streaming indicator (no tool active) -->
+      <div *ngIf="isStreaming && !activeTool && messages.length > 0 && messages[messages.length - 1]?.streaming" class="flex items-center gap-2 pl-2">
+        <div class="flex gap-1">
+          <span class="w-1.5 h-1.5 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
+          <span class="w-1.5 h-1.5 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce" style="animation-delay: 150ms"></span>
+          <span class="w-1.5 h-1.5 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Error bar -->
+    <div *ngIf="error" class="px-4 py-2 bg-red-50 dark:bg-red-900/20 border-t border-red-200 dark:border-red-800/40 flex items-center justify-between">
+      <p class="text-xs text-red-600 dark:text-red-400">{{ error }}</p>
+      <button
+        type="button"
+        class="text-xs px-2 py-1 rounded-md border border-red-300 text-red-600 dark:border-red-400/40 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/30"
+        [disabled]="isStreaming"
+        (click)="retryLast()"
+      >
+        Retry
+      </button>
+    </div>
+
+    <!-- Input area -->
+    <footer class="sticky bottom-0 bg-background-light dark:bg-background-dark border-t border-gray-200 dark:border-gray-800 p-4">
+      <div class="flex gap-2 items-end">
+        <textarea
+          class="flex-1 min-h-[44px] max-h-[120px] rounded-xl border border-slate-300 dark:border-[#324d67] bg-white dark:bg-[#101922] px-3 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
+          placeholder="Type a message…"
+          [(ngModel)]="chatInput"
+          (keydown)="onKeyDown($event)"
+          rows="1"
+        ></textarea>
+        <button
+          type="button"
+          class="h-11 w-11 flex items-center justify-center rounded-xl bg-primary text-white disabled:opacity-40 hover:bg-primary/90 transition-colors shrink-0"
+          [disabled]="isStreaming || !chatInput.trim()"
+          (click)="sendMessage()"
+        >
+          <span class="material-symbols-outlined text-xl">send</span>
+        </button>
+      </div>
+      <p class="text-center text-[10px] text-slate-400 dark:text-slate-600 mt-2">
+        AI responses may not always be accurate. Verify important information.
+      </p>
+    </footer>
+
+  </div>
+</div>

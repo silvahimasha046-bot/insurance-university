@@ -1,4 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from typing import Any, Optional
 import logging
@@ -1337,4 +1338,86 @@ async def train(file: UploadFile = File(...)):
         modelName=model_name,
         trainingFormat=TRAINING_FORMAT_VERSION,
     )
+
+
+# ---------------------------------------------------------------------------
+# Open Chat — Agentic AI endpoints
+# ---------------------------------------------------------------------------
+
+from app.chat.models import ChatRequest, ChatResponse, ChatMessage as ChatMsg
+from app.chat.agent import stream_agent_response, get_agent_response
+from app.chat.memory import clear_user_memory
+
+
+async def _sse_generator(user_id: str, session_id: str, message: str, history: list[ChatMsg]):
+    """Yield SSE-formatted lines from the agent stream."""
+    try:
+        async for event in stream_agent_response(user_id, session_id, message, history):
+            event_type = event["event"]
+            data_json = json.dumps(event["data"], ensure_ascii=False)
+            yield f"event: {event_type}\ndata: {data_json}\n\n"
+    except Exception as exc:
+        logger.error("SSE stream error: %s", exc, exc_info=True)
+        yield f"event: error\ndata: {json.dumps({'message': str(exc)})}\n\n"
+
+
+@app.post("/chat/stream")
+async def chat_stream(request: ChatRequest):
+    """Stream an agentic chat response via Server-Sent Events."""
+    if not request.message.strip():
+        raise HTTPException(status_code=400, detail="Message cannot be empty")
+
+    return StreamingResponse(
+        _sse_generator(
+            request.user_id,
+            request.session_id,
+            request.message,
+            request.conversation_history,
+        ),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+@app.post("/chat/message", response_model=ChatResponse)
+async def chat_message(request: ChatRequest):
+    """Non-streaming agentic chat — returns the full response as JSON."""
+    if not request.message.strip():
+        raise HTTPException(status_code=400, detail="Message cannot be empty")
+
+    result = await get_agent_response(
+        request.user_id,
+        request.session_id,
+        request.message,
+        request.conversation_history,
+    )
+    return ChatResponse(
+        sessionId=result["sessionId"],
+        reply=result["reply"],
+        tokensUsed=result["tokensUsed"],
+        toolsInvoked=result["toolsInvoked"],
+    )
+
+
+@app.delete("/chat/memory/{user_id}")
+def delete_chat_memory(user_id: str):
+    """Clear long-term conversation memory for a user."""
+    clear_user_memory(user_id)
+    return {"message": f"Memory cleared for user {user_id}"}
+
+
+@app.get("/chat/health")
+def chat_health():
+    """Health check for the open-chat subsystem."""
+    from app.chat.config import chat_config as cc
+    return {
+        "status": "ok",
+        "model": cc.GROQ_MODEL,
+        "hasApiKey": bool(cc.GROQ_API_KEY),
+        "faissDataDir": cc.FAISS_DATA_DIR,
+    }
 

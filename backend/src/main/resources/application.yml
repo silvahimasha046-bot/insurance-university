@@ -35,6 +35,10 @@ app:
     timeoutMs: ${LLM_TIMEOUT_MS:3500}
   premium:
     taxRate: ${PREMIUM_TAX_RATE:0.0}
+  open-chat:
+    stream-timeout-ms: ${OPEN_CHAT_STREAM_TIMEOUT_MS:120000}
+    max-messages-per-session: ${OPEN_CHAT_MAX_MESSAGES:200}
+    max-sessions-per-user: ${OPEN_CHAT_MAX_SESSIONS:10}
   jwt:
     secret: "InsuranceUniversitySecretKeyForJWTSigningMustBe256BitsLong!!"
     expirationMs: 86400000

@@ -109,6 +109,27 @@ export interface ChatTurnResponse {
 export type DocumentType = "nic" | "medical" | "income";
 export type DocumentSide = "front" | "back";
 
+// ---- Open Chat types ----
+
+export interface OpenChatMessage {
+  id: number;
+  role: "USER" | "ASSISTANT" | "TOOL";
+  content: string | null;
+  toolName?: string | null;
+  createdAt?: string;
+}
+
+export interface OpenChatSseEvent {
+  event: "token" | "tool_start" | "tool_result" | "done" | "error";
+  data: Record<string, unknown>;
+}
+
+export interface OpenChatDoneData {
+  fullResponse: string;
+  tokensUsed: number;
+  toolsInvoked: string[];
+}
+
 export interface UploadedDocumentMeta {
   documentId: number;
   sessionId: string;
@@ -266,6 +287,116 @@ export class CustomerApiService {
   downloadSessionDocument(sessionId: string, documentId: number): Observable<Blob> {
     return this.http.get(`${BASE_URL}/customer/sessions/${sessionId}/documents/${documentId}/download`, {
       responseType: "blob",
+    });
+  }
+
+  // ---- Open Chat (Agentic AI) ----
+
+  /** Create a new open-chat session. */
+  createOpenChatSession(): Observable<{ sessionId: string }> {
+    return this.http.post<{ sessionId: string }>(`${BASE_URL}/customer/open-chat/sessions`, {});
+  }
+
+  /** Delete an open-chat session. */
+  deleteOpenChatSession(sessionId: string): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${BASE_URL}/customer/open-chat/sessions/${sessionId}`);
+  }
+
+  /** Get conversation history for an open-chat session. */
+  getOpenChatHistory(sessionId: string): Observable<{ sessionId: string; messages: OpenChatMessage[] }> {
+    return this.http.get<{ sessionId: string; messages: OpenChatMessage[] }>(
+      `${BASE_URL}/customer/open-chat/history/${sessionId}`
+    );
+  }
+
+  /** Send a non-streaming open-chat message. */
+  sendOpenChatMessage(sessionId: string, message: string): Observable<Record<string, unknown>> {
+    return this.http.post<Record<string, unknown>>(
+      `${BASE_URL}/customer/open-chat/message`,
+      { sessionId, message }
+    );
+  }
+
+  /**
+   * Stream an open-chat message via SSE using fetch + ReadableStream.
+   * Returns an Observable that emits parsed SSE events.
+   */
+  streamOpenChatMessage(sessionId: string, message: string): Observable<OpenChatSseEvent> {
+    return new Observable<OpenChatSseEvent>((subscriber) => {
+      const token = localStorage.getItem('insurance_auth_token');
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'Accept': 'text/event-stream',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const controller = new AbortController();
+
+      fetch(`${BASE_URL}/customer/open-chat/stream`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ sessionId, message }),
+        signal: controller.signal,
+      })
+        .then((response) => {
+          if (!response.ok || !response.body) {
+            subscriber.error(new Error(`HTTP ${response.status}`));
+            return;
+          }
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
+          let currentEvent = 'token';
+
+          const read = (): void => {
+            reader
+              .read()
+              .then(({ done, value }) => {
+                if (done) {
+                  subscriber.complete();
+                  return;
+                }
+                buffer += decoder.decode(value, { stream: true });
+
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+
+                for (const rawLine of lines) {
+                  const line = rawLine.replace(/\r$/, '');
+                  if (line.startsWith('event:')) {
+                    currentEvent = line.substring(6).trim();
+                  } else if (line.startsWith('data:')) {
+                    try {
+                      const data = JSON.parse(line.substring(5).trim());
+                      subscriber.next({
+                        event: currentEvent as OpenChatSseEvent['event'],
+                        data,
+                      });
+                    } catch {
+                      // skip malformed JSON
+                    }
+                  }
+                }
+                read();
+              })
+              .catch((err) => {
+                if (err.name !== 'AbortError') {
+                  subscriber.error(err);
+                }
+              });
+          };
+
+          read();
+        })
+        .catch((err) => {
+          if (err.name !== 'AbortError') {
+            subscriber.error(err);
+          }
+        });
+
+      return () => controller.abort();
     });
   }
 }
